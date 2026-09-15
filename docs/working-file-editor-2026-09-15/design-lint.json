@@ -1,0 +1,20 @@
+{
+  "findings": [
+    {
+      "severity": "info",
+      "message": "Design system defines 6 colors, 3 typography scales, 1 rounding level, 4 spacing tokens.",
+      "rule": "token-summary"
+    },
+    {
+      "severity": "info",
+      "path": "omitted.components",
+      "message": "components intentionally omitted — no components tokens will be validated",
+      "rule": "declared-omission"
+    }
+  ],
+  "summary": {
+    "errors": 0,
+    "warnings": 0,
+    "infos": 2
+  }
+}

@@ -1,0 +1,45 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Storybook build
+storybook-static
+
+# Electron artifacts
+release
+premium-audit.json
+premium-ui.json
+
+# Local IDE metadata and generated image experiments
+*.iml
+/output/
+
+# Local credentials (keep distributable example templates)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx

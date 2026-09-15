@@ -1,0 +1,68 @@
+/*
+  Branchline design system — colors & type
+  Source: brand-spec.md + branchline.html :root (black / white default theme)
+  Six tokens only. Do not introduce raw hex anywhere that consumes this file.
+*/
+
+:root {
+  color-scheme: light;
+  /* ─── color ─────────────────────────────────────────────────────── */
+  --bg:      #fafafa;   /* app canvas / sidebar background, #fafafa */
+  --surface: #ffffff;        /* cards, panels, inputs, #ffffff */
+  --fg:      #000000;    /* primary text, icons, #000000 */
+  --muted:   #666666;   /* secondary text, meta, #666666 */
+  --border:  #e5e5e5;   /* hairlines, dividers, #e5e5e5 */
+  --accent:  #000000;    /* black accent: commit-graph lane + primary apply action, #000000 */
+
+  /* derived surfaces — always mixed from the six tokens above, never new hex */
+  --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+  --fg-soft:     color-mix(in oklch, var(--fg) 6%, transparent);
+
+  /* ─── typography ────────────────────────────────────────────────── */
+  --font-display: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --font-body:    -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+
+  /* type scale — marketing/editorial surfaces (landing, docs) */
+  --fs-h1: clamp(44px, 6vw, 76px);
+  --fs-h2: clamp(32px, 4vw, 48px);
+  --fs-h3: 22px;
+  --fs-lead: 19px;
+  --fs-body: 16px;
+  --fs-meta: 13px;
+
+  /* type scale — applied product UI (Branchline desktop shell is data-dense,
+     so the in-app scale steps down from the marketing scale above) */
+  --app-fs-h1: 26px;
+  --app-fs-h2: 19px;
+  --app-fs-h3: 15px;
+  --app-fs-body: 13px;
+  --app-fs-meta: 11px;
+  --app-fs-micro: 10px;
+}
+
+/* ─── base type rules ────────────────────────────────────────────── */
+body {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  color: var(--fg);
+  background: var(--bg);
+  line-height: 1.55;
+  letter-spacing: -0.015em;
+}
+h1, .h1 { font-family: var(--font-display); font-size: var(--fs-h1); line-height: 1.04; letter-spacing: -0.02em; }
+h2, .h2 { font-family: var(--font-display); font-size: var(--fs-h2); line-height: 1.1; letter-spacing: -0.015em; }
+h3, .h3 { font-size: var(--fs-h3); font-weight: 600; line-height: 1.3; letter-spacing: -0.005em; }
+.lead { font-size: var(--fs-lead); color: var(--muted); max-width: 60ch; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.meta { font-family: var(--font-mono); font-size: var(--fs-meta); color: var(--muted); }
+.num  { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/*
+  Rule (from git-client-spec.md + branchline.html): this is a data-density
+  tool, not an editorial page. Ref names, hashes, dates, byte/line counts,
+  and diff content are always --font-mono with tabular numerals. Everything
+  else — labels, nav, prose, dialogs — is the single sans in --font-body.
+  Do not introduce a second display face; the "one flourish" for this system
+  is the mono/sans pairing itself, not typographic ornamentation.
+*/

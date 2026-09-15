@@ -1,0 +1,37 @@
+/*
+  Branchline design system — spacing, radius, layout tokens
+  Source: branchline.html :root (8-point marketing grid + tighter app-shell overrides)
+  Pairs with colors_and_type.css. Import both; never redefine these values inline.
+*/
+
+:root {
+  /* spacing — 8-point grid, marketing/editorial surfaces */
+  --gap-xs: 8px;
+  --gap-sm: 12px;
+  --gap-md: 20px;
+  --gap-lg: 32px;
+  --gap-xl: 56px;
+  --gap-2xl: 96px;
+  --container: 1120px;
+  --gutter: 32px;
+
+  --radius: 10px;
+  --radius-lg: 16px;
+
+  /* applied product UI — Branchline's desktop shell tightens both the type
+     scale and radius so more rows fit above the fold; see colors_and_type.css
+     --app-fs-* for the matching type-scale override. */
+  --app-radius: 7px;
+  --app-row-h: 32px;         /* commit-row / log-row height */
+  --app-control-h: 44px;     /* minimum touch/click target: inputs, selects, buttons */
+  --app-sidebar-w: 216px;
+  --app-detail-w: 292px;
+  --app-col-graph: 90px;     /* commit-graph lane column, widens to 115px above 1550px */
+  --app-col-date: 170px;
+}
+
+/* Reference shadow — used once, on the context menu / dropdown surface only.
+   Never stack a second shadow system; anything else on the canvas uses a
+   1px var(--border) hairline instead of elevation. */
+.shadow-menu { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18); }
+.shadow-dialog { box-shadow: 0 24px 100px color-mix(in oklch, var(--fg) 22%, transparent); }

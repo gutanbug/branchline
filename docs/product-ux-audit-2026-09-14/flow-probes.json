@@ -1,0 +1,43 @@
+{
+  "shaSearch": {
+    "sha": "1257ce8e2c86dd81d172b2737cd9e0ec9523834a",
+    "message": "Existing HEAD is not found by the history message-only search"
+  },
+  "hiddenSearchFeedback": {
+    "bounds": {
+      "x": 321,
+      "y": 356.5,
+      "width": 1053,
+      "height": 23.25,
+      "top": 356.5,
+      "right": 1374,
+      "bottom": 379.75,
+      "left": 321
+    },
+    "covered": true,
+    "covering": "<select class=\"input\"><option value=\"\">전체 브랜치</option><option value=\"refs/heads/feature/work\">feature/work</option><option value=\"refs/heads/main\">main</option></select>"
+  },
+  "compareActions": [
+    "Fetch",
+    "Pull",
+    "Push",
+    "Branch",
+    "Stash",
+    "Pop",
+    "커밋 그래프",
+    "내 변경 사항 0",
+    "브랜치 비교",
+    "원격",
+    "충돌 해결",
+    "A ↔ B 교환",
+    "○개인 작업 변경1257ce8e · Audit Developer · 부모 1개2026. 9. 14.",
+    "이전",
+    "다음 100개"
+  ],
+  "worktreeFields": "Worktree 만들기\n×\n새 브랜치 이름\n\n시작 커밋 1257ce8e2c86 · 현재 브랜치는 바뀌지 않습니다.\n\n새 폴더 위치 선택\n\n아직 선택하지 않음\n\n취소\n저장",
+  "oauthFields": "호스팅 계정 연결\n×\n호스팅 제공자\nGitHub\nGitLab\n배포용 로그인 앱이 아직 설정되지 않았습니다. 현재는 등록한 OAuth 앱의 공개 ID로 연결할 수 있습니다.\n공개 Application ID\nGitLab OAuth Application의 Confidential을 끄고 조회는 read_user·read_api, 원격 쓰기는 read_user·api를 허용하세요.\n원격 쓰기 허용 · PR/MR 생성·리뷰·병합·CI 제어\n요청 권한: read_user + read_api. 계정·프로젝트·MR·Pipeline 정보를 읽습니다.\nOS 보안 저장소로 암호화하여 다음 실행에도 유지\n\n선택하지 않으면 앱 종료 시 연결이 사라집니다. 계정 비밀번호·Client Secret은 입력하지 않습니다. OAuth 연결은 Git Push 인증과 AI Agent 로그인을 변경하지 않습니다. 같은 계정을 다시 연결하면 해당 계정의 기존 연결을 갱신합니다.\n\nGitLab 승인 코드 요청",
+  "profileInvalidFields": 0,
+  "profileDeleteConfirmed": 0,
+  "profileDraftAfterNew": "",
+  "agentErrorButtons": []
+}

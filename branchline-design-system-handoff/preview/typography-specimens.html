@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Branchline — 타이포그래피</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<link rel="stylesheet" href="../tokens.css" />
+<style>
+  body { padding: 40px; max-width: 980px; margin: 0 auto; }
+  .col-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-xl); margin-top: var(--gap-lg); }
+  .panel { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; }
+  .panel.app { background: var(--bg); }
+  .row-spec { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; border-top: 1px solid var(--border); padding: 14px 0; }
+  .row-spec:first-of-type { border-top: 0; }
+  .row-spec .sample { min-width: 0; }
+  .row-spec .code { font-family: var(--font-mono); font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .mono-block { font-family: var(--font-mono); font-size: 13px; background: var(--fg-soft); border-radius: 8px; padding: 14px; margin-top: 14px; }
+</style>
+</head>
+<body>
+  <p class="eyebrow">Preview · Typography</p>
+  <h1 class="h2">두 개의 스케일, 하나의 서체</h1>
+  <p class="lead">display와 body가 같은 sans입니다 — 데이터 밀도가 높은 도구라는 brand-spec.md의 명시적 예외입니다. 기술 값은 항상 mono입니다.</p>
+
+  <div class="col-2">
+    <div class="panel">
+      <p class="meta" style="margin-bottom:14px">마케팅 스케일 · 랜딩/문서 표면</p>
+      <div class="row-spec"><span class="h1 sample" style="font-size:32px">Aa 브랜치</span><span class="code">--fs-h1 clamp(44,6vw,76)</span></div>
+      <div class="row-spec"><span class="h2 sample" style="font-size:24px">Aa 커밋 비교</span><span class="code">--fs-h2 clamp(32,4vw,48)</span></div>
+      <div class="row-spec"><span class="h3 sample">Aa 변경 파일</span><span class="code">--fs-h3 22px</span></div>
+      <div class="row-spec"><span class="lead sample" style="max-width:none">두 브랜치 사이의 정확한 차이를 보여줍니다.</span><span class="code">--fs-lead 19px</span></div>
+      <div class="row-spec"><span class="sample" style="font-size:16px">본문 텍스트 예시입니다.</span><span class="code">--fs-body 16px</span></div>
+      <div class="row-spec"><span class="meta sample">2026-09-11 · 예제 데이터</span><span class="code">--fs-meta 13px</span></div>
+    </div>
+    <div class="panel app">
+      <p class="meta" style="margin-bottom:14px">적용 앱 스케일 · Branchline 데스크톱 셸</p>
+      <div class="row-spec"><span class="sample" style="font-size:var(--app-fs-h1);font-weight:650;letter-spacing:-1.1px">커밋 그래프</span><span class="code">--app-fs-h1 26px</span></div>
+      <div class="row-spec"><span class="sample" style="font-size:var(--app-fs-h2);font-weight:650">브랜치 비교</span><span class="code">--app-fs-h2 19px</span></div>
+      <div class="row-spec"><span class="sample" style="font-size:var(--app-fs-h3);font-weight:600">변경 파일 3개</span><span class="code">--app-fs-h3 15px</span></div>
+      <div class="row-spec"><span class="sample" style="font-size:var(--app-fs-body)">브랜치 필터 선택 UI 추가 (예제)</span><span class="code">--app-fs-body 13px</span></div>
+      <div class="row-spec"><span class="meta sample" style="font-size:var(--app-fs-meta)">feature/branch-filter · 2026-09-11</span><span class="code">--app-fs-meta 11px</span></div>
+      <div class="row-spec"><span class="meta sample" style="font-size:var(--app-fs-micro)">3개 파일 변경</span><span class="code">--app-fs-micro 10px</span></div>
+    </div>
+  </div>
+
+  <h3 style="margin-top:var(--gap-xl)">Mono — 해시·ref·수치 전용</h3>
+  <div class="mono-block">
+    commit 9f2a4c1 · parent 7b0e3d8<br/>
+    feature/branch-filter → main (예제)<br/>
+    +42 -11 · 3 files changed
+  </div>
+</body>
+</html>

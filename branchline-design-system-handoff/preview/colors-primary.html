@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Branchline — 색상 토큰</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<link rel="stylesheet" href="../tokens.css" />
+<style>
+  body { padding: 40px; max-width: 980px; margin: 0 auto; }
+  .swatch-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap-lg); margin-top: var(--gap-lg); }
+  .swatch { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--surface); }
+  .swatch-fill { height: 96px; display: flex; align-items: flex-end; padding: 10px; }
+  .swatch-fill.on-fg span { color: var(--surface); }
+  .swatch-body { padding: 14px; }
+  .swatch-name { font-family: var(--font-mono); font-size: 13px; font-weight: 600; }
+  .swatch-val { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .swatch-role { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .derived { margin-top: var(--gap-xl); }
+  .derived-row { display: flex; gap: var(--gap-md); align-items: center; margin-top: var(--gap-sm); }
+  .derived-chip { width: 64px; height: 40px; border-radius: 8px; border: 1px solid var(--border); }
+  .contrast-note { margin-top: var(--gap-xl); padding: 20px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--bg); }
+</style>
+</head>
+<body>
+  <p class="eyebrow">Preview · Colors</p>
+  <h1 class="h2">여섯 개의 색상 토큰</h1>
+  <p class="lead">brand-spec.md에서 잠근 블랙·화이트 기반 무채색 토큰 6개. 강조색은 화면당 두 번을 넘기지 않습니다.</p>
+
+  <div class="swatch-grid">
+    <div class="swatch">
+      <div class="swatch-fill" style="background:var(--bg)"></div>
+      <div class="swatch-body">
+        <div class="swatch-name">--bg</div>
+        <div class="swatch-val">#fafafa · #fafafa</div>
+        <div class="swatch-role">앱 캔버스, 사이드바 배경</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-fill" style="background:var(--surface); border-bottom:1px solid var(--border)"></div>
+      <div class="swatch-body">
+        <div class="swatch-name">--surface</div>
+        <div class="swatch-val">#ffffff · #ffffff</div>
+        <div class="swatch-role">카드, 패널, 입력창, 워크스페이스</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-fill on-fg" style="background:var(--fg)"><span class="meta">Aa</span></div>
+      <div class="swatch-body">
+        <div class="swatch-name">--fg</div>
+        <div class="swatch-val">#000000 · #000000</div>
+        <div class="swatch-role">본문 텍스트, 아이콘</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-fill on-fg" style="background:var(--muted)"><span class="meta">Aa</span></div>
+      <div class="swatch-body">
+        <div class="swatch-name">--muted</div>
+        <div class="swatch-val">#666666 · #666666</div>
+        <div class="swatch-role">보조 텍스트, 메타/타임스탬프</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-fill" style="background:var(--border)"></div>
+      <div class="swatch-body">
+        <div class="swatch-name">--border</div>
+        <div class="swatch-val">#e5e5e5 · #e5e5e5</div>
+        <div class="swatch-role">헤어라인, 구분선</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-fill on-fg" style="background:var(--accent)"><span class="meta">Aa</span></div>
+      <div class="swatch-body">
+        <div class="swatch-name">--accent</div>
+        <div class="swatch-val">#000000 · #000000</div>
+        <div class="swatch-role">커밋 그래프 레인, 주요 적용 동작 (화면당 2회 이하)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="derived">
+    <h3>파생 표면 (새 색상 아님 — 항상 color-mix)</h3>
+    <div class="derived-row">
+      <div class="derived-chip" style="background:var(--accent-soft)"></div>
+      <div>
+        <div class="swatch-name">--accent-soft</div>
+        <div class="swatch-val">color-mix(in oklch, var(--accent) 14%, transparent) — 배지·필 배경</div>
+      </div>
+    </div>
+    <div class="derived-row">
+      <div class="derived-chip" style="background:var(--fg-soft)"></div>
+      <div>
+        <div class="swatch-name">--fg-soft</div>
+        <div class="swatch-val">color-mix(in oklch, var(--fg) 6%, transparent) — hover 배경, diff 추가 표시</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="contrast-note">
+    <strong>대비 확인</strong>
+    <p class="meta" style="margin-top:8px">--fg on --surface, --fg on --bg, --muted on --surface, --surface on --accent(버튼) 모두 WCAG AA 이상. hover 상태에서 전경색을 --muted로 낮추는 패턴은 사용하지 않습니다 — 배경만 --fg-soft/--accent-soft로 이동합니다.</p>
+  </div>
+</body>
+</html>

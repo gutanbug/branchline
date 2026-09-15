@@ -1,0 +1,6 @@
+interface:
+  display_name: "Branchline 개발 워크플로"
+  short_description: "Branchline의 UI·Electron·Git·AI 개발 스킬과 검증을 연결합니다"
+  default_prompt: "$branchline-workflow 현재 요청에 필요한 프로젝트 문서와 스킬을 적용하고 구현·검증을 진행해줘."
+policy:
+  allow_implicit_invocation: true

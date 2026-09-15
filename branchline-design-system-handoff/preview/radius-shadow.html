@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Branchline — 반경 &amp; 그림자</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<link rel="stylesheet" href="../tokens.css" />
+<style>
+  body { padding: 40px; max-width: 980px; margin: 0 auto; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap-lg); margin-top: var(--gap-lg); }
+  .box { height: 110px; background: var(--surface); border: 1px solid var(--border); display: grid; place-items: center; font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+  .menu-demo, .dialog-demo { margin-top: var(--gap-xl); padding: 28px; background: var(--bg); border-radius: var(--radius-lg); display: flex; gap: var(--gap-xl); flex-wrap: wrap; }
+  .menu-card { width: 200px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px; }
+  .menu-card button { display: block; width: 100%; text-align: left; padding: 8px 10px; border-radius: 6px; font-size: 12px; }
+  .dialog-card { width: 260px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+</style>
+</head>
+<body>
+  <p class="eyebrow">Preview · Radius &amp; Shadow</p>
+  <h1 class="h2">반경 두 쌍, 그림자 두 개뿐</h1>
+  <p class="lead">캔버스 위 패널은 그림자를 쓰지 않습니다 — 항상 1px 헤어라인입니다. 그림자는 떠 있는 표면(메뉴, 다이얼로그)에만 예약되어 있습니다.</p>
+
+  <div class="grid">
+    <div class="box" style="border-radius:var(--radius)">--radius 10px<br/>마케팅 카드</div>
+    <div class="box" style="border-radius:var(--radius-lg)">--radius-lg 16px<br/>마케팅 대형 카드</div>
+    <div class="box" style="border-radius:var(--app-radius)">--app-radius 7px<br/>앱 카드·드롭다운</div>
+  </div>
+
+  <div class="menu-demo">
+    <div>
+      <p class="meta" style="margin-bottom:10px">.shadow-menu — 컨텍스트 메뉴/드롭다운 전용</p>
+      <div class="menu-card shadow-menu">
+        <button style="background:var(--bg)">체크아웃</button>
+        <button>브랜치 이름 변경</button>
+        <button>브랜치 삭제</button>
+      </div>
+    </div>
+    <div>
+      <p class="meta" style="margin-bottom:10px">.shadow-dialog — 네이티브 &lt;dialog&gt; 전용</p>
+      <div class="dialog-card shadow-dialog">
+        <h3>새 브랜치 만들기</h3>
+        <p class="meta" style="margin-top:8px">develop 기준으로 생성합니다.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "branchline-prototype",
+  "version": "0.1.0",
+  "private": true,
+  "description": "브랜치 비교 중심의 Electron Git 클라이언트 프로토타입",
+  "main": "electron-main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node check-prototype.cjs"
+  },
+  "devDependencies": {
+    "electron": "44.3.0"
+  }
+}

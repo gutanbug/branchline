@@ -1,0 +1,4 @@
+allowBuilds:
+  esbuild: true
+  # NSIS is used; the unused Squirrel installer does not need its install script.
+  electron-winstaller: false

@@ -1,0 +1,53 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs/promises');
+const os = require('node:os');
+const path = require('node:path');
+const { git, state } = require('./git.cjs');
+const { run, ignorePattern } = require('./file-actions.cjs');
+
+test('changed-file actions preserve index, scope, paths and stale state', async () => {
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'branchline-file-actions-')));
+  const cwd = path.join(root, 'repo'); await fs.mkdir(cwd);
+  const call = async (action, file, staged = false, native = {}) => run(cwd, { action, file, staged, expected: (await state(cwd)).token }, native);
+  try {
+    await git(cwd, ['init', '-b', 'main']); await git(cwd, ['config', 'user.name', 'File Test']); await git(cwd, ['config', 'user.email', 'files@example.invalid']);
+    await fs.writeFile(path.join(cwd, 'tracked.txt'), 'base\n'); await fs.writeFile(path.join(cwd, 'other.txt'), 'other\n'); await git(cwd, ['add', '.']); await git(cwd, ['-c', 'commit.gpgsign=false', 'commit', '-m', 'base']);
+    await fs.writeFile(path.join(cwd, 'tracked.txt'), 'staged\n'); await git(cwd, ['add', 'tracked.txt']); await fs.writeFile(path.join(cwd, 'tracked.txt'), 'working\n'); await fs.writeFile(path.join(cwd, 'other.txt'), 'other working\n');
+    const index = await git(cwd, ['write-tree']);
+    assert.match((await call('blame', 'tracked.txt')).text, /File Test.*base/);
+    let patch; await call('patch', 'tracked.txt', false, { patch: value => { patch = value; } }); assert.match(patch, /-staged\n\+working/);
+    await call('patch', 'tracked.txt', true, { patch: value => { patch = value; } }); assert.match(patch, /-base\n\+staged/);
+    let copied; await call('copy-relative', 'tracked.txt', false, { copy: value => { copied = value; } }); assert.equal(copied, 'tracked.txt');
+    await call('copy-absolute', 'tracked.txt', false, { copy: value => { copied = value; } }); assert.equal(copied, path.join(cwd, 'tracked.txt'));
+    const token = (await state(cwd)).token; await fs.writeFile(path.join(cwd, 'tracked.txt'), 'external\n');
+    await assert.rejects(run(cwd, { action: 'discard', file: 'tracked.txt', staged: false, expected: token }), /상태가 바뀌었/);
+    await assert.rejects(call('discard', 'tracked.txt', true), /추적 중인 변경/);
+    await call('discard', 'tracked.txt'); assert.equal(await fs.readFile(path.join(cwd, 'tracked.txt'), 'utf8'), 'staged\n'); assert.equal(await git(cwd, ['write-tree']), index);
+    await fs.writeFile(path.join(cwd, 'tracked.txt'), 'stash working\n');
+    await call('stash-file', 'tracked.txt'); assert.equal((await git(cwd, ['stash', 'show', '--name-only'])).trim(), 'tracked.txt'); assert.equal(await fs.readFile(path.join(cwd, 'tracked.txt'), 'utf8'), 'base\n'); assert.equal(await fs.readFile(path.join(cwd, 'other.txt'), 'utf8'), 'other working\n');
+    assert.equal(await git(cwd, ['diff', 'HEAD', '--', 'tracked.txt']), ''); await git(cwd, ['stash', 'apply', '--index']); assert.equal(await git(cwd, ['write-tree']), index);
+    await assert.rejects(call('stash-file', 'other.txt'), /다른 파일도 스테이징/);
+    const weird = '한글 폴더/[odd] name.java'; await fs.mkdir(path.dirname(path.join(cwd, weird))); await fs.writeFile(path.join(cwd, weird), 'new\n');
+    await call('ignore-file', weird); await git(cwd, ['check-ignore', '-q', '--', weird]);
+    assert.equal(await fs.readFile(path.join(cwd, weird), 'utf8'), 'new\n'); assert.equal(await git(cwd, ['write-tree']), index);
+    assert.equal(ignorePattern('dir/a.java', 'ignore-extension'), '*.java'); assert.equal(ignorePattern('dir/a.java', 'ignore-folder'), '/dir/'); assert.throws(() => ignorePattern('a\nb', 'ignore-file'), /줄바꿈/);
+    await fs.writeFile(path.join(cwd, 'a.java'), 'new java'); await call('ignore-extension', 'a.java'); await git(cwd, ['check-ignore', '-q', '--', 'a.java']);
+    await fs.mkdir(path.join(cwd, 'folder')); await fs.writeFile(path.join(cwd, 'folder/file'), 'folder'); await call('ignore-folder', 'folder/file'); await git(cwd, ['check-ignore', '-q', '--', 'folder/file']);
+    await assert.rejects(call('ignore-file', 'tracked.txt'), /추적 중인/);
+    await fs.writeFile(path.join(cwd, 'new.txt'), 'new\n'); await assert.rejects(call('discard', 'new.txt'), /새 파일/);
+    await call('patch', 'new.txt', false, { patch: value => { patch = value; } }); assert.match(patch, /\+new/);
+    assert.equal((await call('patch', 'new.txt', false, { patch: () => false })).cancelled, true);
+    await fs.writeFile(path.join(cwd, 'binary'), Buffer.from([0, 255])); await assert.rejects(call('patch', 'binary', false, { patch: () => assert.fail('unsupported patch') }), /바이너리/);
+    await call('trash', 'new.txt', false, { trash: target => fs.rename(target, path.join(root, 'trashed.txt')) }); assert.equal(await fs.readFile(path.join(root, 'trashed.txt'), 'utf8'), 'new\n'); assert.equal(await git(cwd, ['write-tree']), index);
+    await fs.symlink(path.join(root, 'trashed.txt'), path.join(cwd, 'link')); await assert.rejects(call('trash', 'link'), /심볼릭/);
+    await fs.appendFile(path.join(cwd, '.gitignore'), '/exception.txt\n!/exception.txt\n'); await fs.writeFile(path.join(cwd, 'exception.txt'), 'exception');
+    await assert.rejects(call('ignore-file', 'exception.txt'), /같은 무시 규칙/);
+    await fs.mkdir(path.join(cwd, 'rules')); await fs.writeFile(path.join(cwd, 'rules/.gitignore'), '!keep.txt\n'); await fs.writeFile(path.join(cwd, 'rules/keep.txt'), 'keep');
+    await assert.rejects(call('ignore-file', 'rules/keep.txt'), /규칙은 추가했지만/);
+    assert.match(await fs.readFile(path.join(cwd, '.gitignore'), 'utf8'), /rules\/keep.txt/);
+    await fs.rm(path.join(cwd, '.gitignore')); await fs.symlink(path.join(root, 'trashed.txt'), path.join(cwd, '.gitignore')); await assert.rejects(call('ignore-file', 'binary'), /심볼릭/); assert.equal(await fs.readFile(path.join(root, 'trashed.txt'), 'utf8'), 'new\n');
+    await assert.rejects(call('trash', '../trashed.txt'), /변경 파일/);
+    await fs.writeFile(path.join(cwd, '.git/MERGE_HEAD'), (await state(cwd)).head); await assert.rejects(call('discard', 'tracked.txt'), /진행 중/);
+  } finally { await fs.rm(root, { recursive: true, force: true }); }
+});

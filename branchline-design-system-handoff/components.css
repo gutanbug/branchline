@@ -1,0 +1,158 @@
+/*
+  Branchline design system — component library
+  Source: branchline.html component CSS (buttons, sidebar, commit graph,
+  detail panel, forms, tables, overlays), generalized from page-specific
+  IDs into reusable classes. Import after colors_and_type.css + tokens.css —
+  every value here resolves through those two files' custom properties.
+*/
+
+/* ─── reset scaffolding shared by every component ─────────────────────── */
+.bl-reset, .bl-reset * , .bl-reset *::before, .bl-reset *::after { box-sizing: border-box; }
+.bl-reset button, .bl-reset input, .bl-reset select, .bl-reset textarea { font: inherit; color: var(--fg); }
+.bl-reset button { background: transparent; border: 0; cursor: pointer; }
+.bl-reset button:disabled { opacity: .45; cursor: not-allowed; }
+.bl-reset :focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
+.ico { width: 17px; height: 17px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ─── buttons ───────────────────────────────────────────────────────── */
+.btn { display: inline-flex; align-items: center; gap: 8px; min-height: var(--app-control-h); padding: 8px 13px; border-radius: var(--app-radius); border: 1px solid transparent; font-size: 12px; font-weight: 500; justify-content: center; transition: transform .05s ease, background .15s ease, border-color .15s ease; }
+.btn:active { transform: translateY(1px); }
+.btn-primary { color: var(--surface); background: var(--accent); border-color: transparent; }
+.btn-primary:hover:not(:disabled) { background: color-mix(in oklch, var(--accent) 85%, var(--surface)); }
+.btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
+.btn-secondary:hover { background: var(--fg-soft); }
+.btn-ghost { background: transparent; color: var(--fg); border-color: transparent; }
+.btn-ghost:hover { color: var(--fg); background: var(--fg-soft); }
+.toolbar-btn { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 6px 12px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--fg); font-size: 10px; font-weight: 500; min-width: 52px; min-height: var(--app-control-h); white-space: nowrap; }
+.toolbar-btn:hover:not([disabled]) { background: var(--fg-soft); }
+.toolbar-btn[disabled] { opacity: .4; cursor: not-allowed; }
+.toolbar-btn .ico { width: 18px; height: 18px; }
+.toolbar-divider { width: 1px; align-self: stretch; margin: 6px 2px; background: var(--border); }
+
+/* ─── fields / forms ────────────────────────────────────────────────── */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 13px; color: var(--muted); }
+.input, .textarea, .compact-select { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: var(--app-radius); background: var(--surface); color: var(--fg); font: inherit; font-size: 13px; min-height: var(--app-control-h); }
+.input:focus, .textarea:focus, .compact-select:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+.textarea { min-height: 96px; resize: vertical; line-height: 1.55; }
+.compact-select { padding: 0 9px; max-width: 100%; font-size: 11px; }
+.search-wrap { display: flex; align-items: center; gap: 8px; padding: 0 9px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; }
+.search-wrap input { width: 100%; min-width: 0; min-height: var(--app-control-h); background: none; border: 0; font-size: 12px; }
+.search-wrap .ico { width: 14px; }
+input[type="checkbox"] { width: 14px; height: 14px; accent-color: var(--fg); cursor: pointer; }
+
+/* ─── tags / badges ─────────────────────────────────────────────────── */
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: var(--accent-soft); color: var(--accent); border-radius: 999px; font-family: var(--font-mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+.tag { display: inline-flex; align-items: center; padding: 4px 10px; background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; font-size: 12px; }
+.branch-tag { border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 9px; font-family: var(--font-mono); }
+.neutral-tag { display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid var(--border); border-radius: 5px; font-size: 10px; color: var(--muted); }
+
+/* ─── data table ────────────────────────────────────────────────────── */
+.ds-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ds-table th, .ds-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+.ds-table th { color: var(--muted); font-weight: 500; font-family: var(--font-mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+.ds-table tbody tr:hover { background: var(--fg-soft); }
+.ds-table .num-col { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
+
+/* ─── appbar / toolbar shell ────────────────────────────────────────── */
+.appbar { height: 58px; padding: 0 22px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 24px; }
+.wordmark { font-size: 19px; font-weight: 720; letter-spacing: -.8px; display: flex; gap: 10px; align-items: center; min-width: 169px; }
+.wordmark .mark { width: 27px; height: 29px; }
+.repo-tab { border-inline: 1px solid var(--border); align-self: stretch; padding: 0 22px; display: flex; align-items: center; gap: 12px; }
+
+/* ─── sidebar / branch tree ─────────────────────────────────────────── */
+.sidebar { background: var(--bg); border-right: 1px solid var(--border); padding: 22px 12px 16px; display: flex; flex-direction: column; gap: 23px; width: var(--app-sidebar-w); }
+.sidebar nav { display: flex; flex-direction: column; gap: 3px; }
+.side-button { display: flex; gap: 10px; align-items: center; width: 100%; min-height: 36px; padding: 0 12px; border-radius: 6px; text-align: left; color: var(--muted); font-weight: 500; }
+.side-button:hover { background: var(--fg-soft); color: var(--fg); }
+.side-button[aria-current="page"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 4px var(--fg-soft); font-weight: 650; }
+.side-button .count { margin-left: auto; font: 11px var(--font-mono); }
+.branch-item { padding-left: 20px; font-family: var(--font-mono); font-size: 11px; gap: 10px; }
+.branch-item .ico { width: 13px; }
+.tree-leaf { padding-left: 40px; }
+.sidebar details summary { display: flex; align-items: center; padding: 0 12px; color: var(--muted); cursor: pointer; list-style: none; gap: 10px; font-size: 11px; min-height: 32px; }
+.sidebar details summary::before { content: '›'; font-size: 11px; width: 10px; flex: none; }
+.sidebar details[open] summary::before { content: '⌄'; }
+.branch-folder summary { font-family: var(--font-mono); font-size: 11px; padding-left: 20px; color: var(--muted); }
+.branch-folder summary:hover { color: var(--fg); }
+.current-branch-indicator { padding: 8px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 6px; }
+
+/* ─── view tabs ─────────────────────────────────────────────────────── */
+.view-tabs { display: flex; gap: 22px; padding: 0 24px; border-bottom: 1px solid var(--border); }
+.view-tabs button { font-size: 12px; padding: 10px 2px; color: var(--muted); position: relative; min-height: auto; }
+.view-tabs button[aria-selected="true"] { color: var(--fg); font-weight: 650; }
+.view-tabs button[aria-selected="true"]::after { position: absolute; content: ''; height: 2px; bottom: 0; left: 0; right: 0; background: var(--fg); }
+.view-tabs button:hover { color: var(--fg); }
+
+/* ─── branch compare header ─────────────────────────────────────────── */
+.branch-compare { display: grid; grid-template-columns: 1fr 48px 1fr; align-items: center; gap: 12px; }
+.branch-select { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 11px 16px; min-width: 0; }
+.branch-select label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 1px; }
+.branch-select select { width: 100%; background: transparent; border: 0; font: 13px var(--font-mono); min-height: 24px; padding: 0; }
+.swap { border: 1px solid var(--border); border-radius: 50%; width: 44px; height: 44px; min-height: 44px; justify-self: center; font-size: 19px; }
+.swap:hover { background: var(--fg-soft); }
+.compare-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 22px; font-size: 11px; color: var(--muted); }
+.compare-summary b { font: 600 16px var(--font-mono); color: var(--fg); margin-right: 5px; }
+.compare-summary .summary-end { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+
+/* ─── commit graph + row ────────────────────────────────────────────── */
+.commit-head { height: 30px; display: grid; grid-template-columns: 34px var(--app-col-graph) minmax(0,1fr) var(--app-col-date); column-gap: 12px; align-items: center; background: var(--bg); border-block: 1px solid var(--border); padding: 0 16px; color: var(--muted); font-size: 10px; }
+.commit-row { display: grid; grid-template-columns: 34px var(--app-col-graph) minmax(0,1fr) var(--app-col-date); column-gap: 12px; height: var(--app-row-h); align-items: center; padding: 0 16px; border-bottom: 1px solid color-mix(in oklch, var(--border) 55%, var(--surface)); cursor: pointer; text-align: left; width: 100%; }
+.commit-row:hover { background: var(--bg); }
+.commit-row.selected { background: var(--fg-soft); }
+.commit-row.current { box-shadow: inset 3px 0 var(--fg); }
+.commit-title { display: block; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+.commit-meta { display: flex; gap: 8px; align-items: center; font-size: 10px; color: var(--muted); white-space: nowrap; }
+.date { font: 10px var(--font-mono); color: var(--muted); white-space: nowrap; }
+.graph-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
+.col-resizer { position: absolute; top: 0; right: -8px; width: 16px; height: 100%; padding: 0; border: 0; background: transparent; cursor: col-resize; }
+.col-resizer::after { content: ''; position: absolute; top: 4px; bottom: 4px; left: 7px; width: 1px; background: var(--border); }
+.col-resizer:hover::after, .col-resizer:active::after { background: var(--accent); }
+
+/* ─── detail panel ──────────────────────────────────────────────────── */
+.detail { border-left: 1px solid var(--border); padding: 0 20px 22px; background: color-mix(in oklch, var(--bg) 45%, var(--surface)); min-width: 0; width: var(--app-detail-w); }
+.detail-kicker { height: 45px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); font-size: 11px; margin-bottom: 22px; }
+.detail h2 { font-size: 18px; line-height: 1.5; letter-spacing: -.5px; margin: 0 0 16px; }
+.person { display: flex; gap: 9px; align-items: center; font-size: 11px; }
+.avatar { height: 29px; width: 29px; display: grid; place-items: center; background: var(--border); border-radius: 50%; font-size: 11px; font-weight: 600; }
+.detail dl { margin: 20px 0; display: grid; grid-template-columns: 60px minmax(0,1fr); gap: 10px; font-size: 11px; }
+.detail dt { color: var(--muted); } .detail dd { margin: 0; overflow-wrap: anywhere; }
+.detail-sub { font-size: 11px; font-weight: 600; display: flex; justify-content: space-between; margin: 0 0 12px; }
+.file-item { font-family: var(--font-mono); font-size: 10px; padding: 9px 0; display: flex; align-items: center; gap: 8px; }
+.file-item .file-status { background: var(--fg-soft); border-radius: 4px; padding: 2px 5px; }
+.diff-small { border: 1px solid var(--border); border-radius: 6px; background: var(--surface); overflow: auto; font: 10px/1.9 var(--font-mono); }
+.diff-small div { padding: 3px 9px; white-space: pre-wrap; }
+.diff-add { background: var(--fg-soft); color: var(--fg); }
+.diff-del { background: var(--border); color: var(--muted); }
+
+/* ─── empty state ───────────────────────────────────────────────────── */
+.empty { padding: 45px 20px; text-align: center; color: var(--muted); }
+.empty strong { color: var(--fg); font-size: 15px; display: block; margin-bottom: 8px; }
+
+/* ─── apply tray / status bar ───────────────────────────────────────── */
+.apply-tray { padding: 15px 20px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 12px; background: var(--surface); }
+.apply-tray .btn-primary { margin-left: auto; }
+.apply-tray small { font-size: 10px; color: var(--muted); display: block; }
+.apply-tray strong { font-size: 11px; }
+.statusbar { min-height: var(--app-control-h); border-top: 1px solid var(--border); display: flex; align-items: center; gap: 18px; padding: 5px 18px; background: var(--bg); font-size: 10px; color: var(--muted); flex-wrap: wrap; }
+.statusbar .right { margin-left: auto; }
+
+/* ─── overlays: context menu, dropdown search, dialog, toast ───────── */
+.context-menu { min-width: 200px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 6px; }
+.context-menu button { display: flex; width: 100%; justify-content: space-between; align-items: center; gap: 14px; padding: 8px 10px; border-radius: 6px; font-size: 12px; text-align: left; min-height: 36px; }
+.context-menu button:hover, .context-menu button:focus-visible { background: var(--bg); }
+.context-menu .menu-sep { height: 1px; margin: 6px 4px; background: var(--border); }
+.dropdown-search { padding: 2px 2px 8px; }
+.dropdown-search input { width: 100%; padding: 7px 9px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; background: var(--bg); color: var(--fg); }
+.dropdown-option { justify-content: flex-start !important; font-family: var(--font-mono); }
+.dropdown-option .ico { width: 13px; }
+.bl-dialog { width: min(420px, 100%); border: 1px solid var(--border); border-radius: 12px; padding: 26px; background: var(--surface); color: var(--fg); }
+.bl-dialog h2 { font-size: 21px; line-height: 1.4; margin: 0 0 8px; }
+.bl-dialog p { font-size: 12px; color: var(--muted); line-height: 1.8; margin: 0; }
+.bl-dialog .field { margin: 16px 0; }
+.bl-dialog .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 24px; }
+.bl-toast { display: inline-flex; background: var(--fg); color: var(--surface); padding: 12px 20px; border-radius: 8px; font-size: 12px; }
+
+/* ─── reserved shadows (menus/dialogs only — never on canvas panels) ── */
+.shadow-menu { box-shadow: 0 10px 30px rgba(0, 0, 0, .18); }
+.shadow-dialog { box-shadow: 0 24px 100px color-mix(in oklch, var(--fg) 22%, transparent); }

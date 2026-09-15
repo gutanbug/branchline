@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Branchline — 브랜드 자산</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<link rel="stylesheet" href="../tokens.css" />
+<style>
+  body { padding: 40px; max-width: 1040px; margin: 0 auto; }
+  .mark-row { display: flex; align-items: center; gap: 14px; margin-top: var(--gap-lg); }
+  .mark-row svg { width: 28px; height: 30px; }
+  .wordmark-text { font-size: 19px; font-weight: 720; letter-spacing: -.8px; }
+  .shot-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--gap-lg); margin-top: var(--gap-xl); }
+  .shot-card { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--surface); }
+  .shot-card img { display: block; width: 100%; height: auto; }
+  .shot-card figcaption { padding: 12px 16px; font-size: 12px; color: var(--muted); }
+  .shot-card.full { grid-column: 1 / -1; }
+  .note { margin-top: var(--gap-xl); padding: 20px; background: var(--bg); border-radius: var(--radius-lg); }
+</style>
+</head>
+<body>
+  <p class="eyebrow">Preview · Brand assets</p>
+  <h1 class="h2">워드마크 &amp; 실제 앱 스크린샷</h1>
+  <p class="lead">아래는 모두 Branchline 자체(데모 모드)에서 나온 실제 화면입니다 — 경쟁 제품 참고 자료는 포함하지 않습니다 (context/provenance.md 참고).</p>
+
+  <div class="mark-row">
+    <img src="../assets/branchline-mark.svg" alt="Branchline 마크" />
+    <span class="wordmark-text">Branchline</span>
+  </div>
+
+  <div class="shot-grid">
+    <figure class="shot-card full">
+      <img src="../assets/screenshot-commit-graph-full.png" alt="Branchline 커밋 그래프 전체 화면" />
+      <figcaption>커밋 그래프 전체 화면 — 필터 바, 그래프 목록, 상세 패널의 선택 전 안내 문구</figcaption>
+    </figure>
+    <figure class="shot-card">
+      <img src="../assets/screenshot-commit-graph-header.png" alt="페이지 헤더와 브랜치/범위 선택" />
+      <figcaption>페이지 헤더 + 조회할 브랜치 / 이력 범위 선택</figcaption>
+    </figure>
+    <figure class="shot-card">
+      <img src="../assets/screenshot-wordmark-card.png" alt="워드마크와 작업 공간 카드" />
+      <figcaption>워드마크 + 개인 작업 공간 카드</figcaption>
+    </figure>
+    <figure class="shot-card">
+      <img src="../assets/screenshot-branch-filter-dropdown.png" alt="브랜치 필터 드롭다운" />
+      <figcaption>커스텀 브랜치 필터 드롭다운 (검색 입력 + 목록 분리 패턴)</figcaption>
+    </figure>
+    <figure class="shot-card">
+      <img src="../assets/screenshot-branch-filter-summary.png" alt="브랜치 필터 요약 문구" />
+      <figcaption>필터 요약 타이포그래피</figcaption>
+    </figure>
+    <figure class="shot-card">
+      <img src="../assets/screenshot-branch-folder-tree.png" alt="사이드바 폴더 트리" />
+      <figcaption>사이드바 fix/ 폴더 트리 + 리프 정렬</figcaption>
+    </figure>
+    <figure class="shot-card">
+      <img src="../assets/screenshot-sidebar-tree.png" alt="사이드바 LOCAL/REMOTE 트리" />
+      <figcaption>사이드바 LOCAL/REMOTE 트리 + 카운트</figcaption>
+    </figure>
+    <figure class="shot-card">
+      <img src="../assets/screenshot-toolbar-buttons.png" alt="appbar 툴바 버튼" />
+      <figcaption>appbar 툴바 버튼 (Fetch/Push/Branch/Stash/Pop/Terminal)</figcaption>
+    </figure>
+  </div>
+
+  <div class="note">
+    <strong>제외된 자료</strong>
+    <p class="meta" style="margin-top:8px">원본 소스 프로젝트에는 GitKraken 스크린샷 9장이 더 있었습니다 (실제 회사명·실명·내부 티켓 번호 포함). 저작권·개인정보 보호를 위해 이 디자인 시스템 패키지에는 포함하지 않았습니다 — 자세한 내용은 <code>context/provenance.md</code>.</p>
+  </div>
+</body>
+</html>

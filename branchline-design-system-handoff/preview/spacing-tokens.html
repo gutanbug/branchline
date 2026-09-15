@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Branchline — 간격 토큰</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<link rel="stylesheet" href="../tokens.css" />
+<style>
+  body { padding: 40px; max-width: 980px; margin: 0 auto; }
+  .bar-row { display: flex; align-items: center; gap: 16px; margin-top: 10px; }
+  .bar { height: 22px; background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 4px; }
+  .bar-label { font-family: var(--font-mono); font-size: 12px; color: var(--muted); width: 220px; flex: none; }
+  .app-diagram { margin-top: var(--gap-xl); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .app-diagram .row { display: grid; grid-template-columns: 216px 1fr 292px; height: 120px; }
+  .app-diagram .cell { display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 11px; color: var(--muted); border-right: 1px solid var(--border); }
+  .app-diagram .cell:last-child { border-right: 0; }
+  .app-diagram .sidebar-cell { background: var(--bg); }
+  .app-diagram .detail-cell { background: color-mix(in oklch, var(--bg) 45%, var(--surface)); }
+</style>
+</head>
+<body>
+  <p class="eyebrow">Preview · Spacing</p>
+  <h1 class="h2">8포인트 그리드 + 앱 셸 상수</h1>
+  <p class="lead">마케팅 표면은 8포인트 그리드를, Branchline 데스크톱 셸은 그 위에 고정 레이아웃 상수를 얹습니다.</p>
+
+  <h3 style="margin-top:var(--gap-lg)">마케팅 간격 스케일</h3>
+  <div class="bar-row"><span class="bar-label">--gap-xs (8px)</span><div class="bar" style="width:8px"></div></div>
+  <div class="bar-row"><span class="bar-label">--gap-sm (12px)</span><div class="bar" style="width:12px"></div></div>
+  <div class="bar-row"><span class="bar-label">--gap-md (20px)</span><div class="bar" style="width:20px"></div></div>
+  <div class="bar-row"><span class="bar-label">--gap-lg (32px)</span><div class="bar" style="width:32px"></div></div>
+  <div class="bar-row"><span class="bar-label">--gap-xl (56px)</span><div class="bar" style="width:56px"></div></div>
+  <div class="bar-row"><span class="bar-label">--gap-2xl (96px)</span><div class="bar" style="width:96px"></div></div>
+
+  <h3 style="margin-top:var(--gap-xl)">앱 셸 레이아웃 상수 (실측 비율)</h3>
+  <div class="app-diagram">
+    <div class="row">
+      <div class="cell sidebar-cell">.sidebar<br/>--app-sidebar-w 216px</div>
+      <div class="cell">.history (fluid)<br/>row height --app-row-h 32px</div>
+      <div class="cell detail-cell">.detail<br/>--app-detail-w 292px</div>
+    </div>
+  </div>
+  <p class="meta" style="margin-top:10px">최소 클릭 타깃 --app-control-h 44px는 모든 버튼·입력·select에 적용됩니다. 1550px 이상에서 detail은 340px로, 그래프 컬럼은 90px→115px로 넓어집니다.</p>
+</body>
+</html>

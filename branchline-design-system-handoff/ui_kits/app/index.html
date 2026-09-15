@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Branchline — 적용 UI 키트</title>
+<link rel="stylesheet" href="../../colors_and_type.css" />
+<link rel="stylesheet" href="../../tokens.css" />
+<style>
+  * , *::before, *::after { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:var(--font-body); font-size:13px; letter-spacing:-.015em; }
+  button,input,select,textarea { font:inherit; color:var(--fg); }
+  button { background:transparent; border:0; cursor:pointer; }
+  button:disabled { opacity:.45; cursor:not-allowed; }
+  :focus-visible { outline:2px solid var(--fg); outline-offset:3px; }
+  .ico { width:17px; height:17px; flex:none; stroke:currentColor; fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+
+  .appbar { height:58px; padding:0 22px; background:var(--surface); border-bottom:1px solid var(--border); display:flex; align-items:center; gap:24px; }
+  .wordmark { font-size:19px; font-weight:720; letter-spacing:-.8px; display:flex; gap:10px; align-items:center; min-width:169px; }
+  .wordmark .mark { width:27px; height:29px; }
+  .repo-tab { border-inline:1px solid var(--border); align-self:stretch; padding:0 22px; display:flex; align-items:center; gap:12px; }
+  .neutral-tag { display:inline-flex; align-items:center; padding:3px 7px; border:1px solid var(--border); border-radius:5px; font-size:10px; color:var(--muted); }
+  .appbar .meta { margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--muted); }
+  .toolbar-btn { display:inline-flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:6px 12px; border-radius:8px; background:transparent; color:var(--fg); font-size:10px; font-weight:500; min-width:52px; min-height:44px; }
+  .toolbar-btn:hover:not([disabled]) { background:var(--fg-soft); }
+  .toolbar-btn[disabled] { opacity:.4; cursor:not-allowed; }
+  .toolbar-divider { width:1px; align-self:stretch; margin:6px 2px; background:var(--border); }
+  .btn { display:inline-flex; align-items:center; gap:8px; font-size:12px; min-height:44px; padding:8px 13px; border-radius:7px; border:1px solid var(--border); justify-content:center; }
+  .btn-secondary:hover { background:var(--fg-soft); }
+
+  .shell { display:grid; grid-template-columns:216px minmax(0,1fr); min-height:720px; }
+  .sidebar { background:var(--bg); border-right:1px solid var(--border); padding:22px 12px 16px; display:flex; flex-direction:column; gap:23px; }
+  .sidebar nav { display:flex; flex-direction:column; gap:3px; }
+  .side-button { display:flex; gap:10px; align-items:center; width:100%; min-height:36px; padding:0 12px; border-radius:6px; text-align:left; color:var(--muted); font-weight:500; }
+  .side-button:hover { background:var(--fg-soft); color:var(--fg); }
+  .side-button[aria-current="page"] { background:var(--surface); color:var(--fg); box-shadow:0 1px 4px var(--fg-soft); font-weight:650; }
+  .side-button .count { margin-left:auto; font:11px var(--font-mono); }
+  .current-branch-indicator { padding:8px 12px; margin:0 0 4px; background:var(--surface); border:1px solid var(--border); border-radius:8px; display:flex; align-items:center; gap:6px; }
+  .branch-item { padding-left:20px; font-family:var(--font-mono); font-size:11px; gap:10px; }
+  .branch-item .ico { width:13px; }
+  .tree-leaf { padding-left:40px; }
+  .sidebar details summary { display:flex; align-items:center; padding:0 12px; color:var(--muted); cursor:pointer; list-style:none; gap:10px; font-size:11px; min-height:32px; }
+  .sidebar details summary::before { content:'›'; font-size:11px; width:10px; flex:none; }
+  .sidebar details[open] summary::before { content:'⌄'; }
+  .branch-folder summary { font-family:var(--font-mono); font-size:11px; padding-left:20px; color:var(--muted); }
+  .branch-folder summary:hover { color:var(--fg); }
+  .sidebar-bottom { margin-top:auto; padding-top:18px; border-top:1px solid var(--border); }
+
+  .workspace { min-width:0; background:var(--surface); position:relative; }
+  .workspace-head { padding:27px 30px 20px; }
+  .crumb { color:var(--muted); font-size:11px; margin-bottom:12px; }
+  .head-title { display:flex; align-items:center; gap:12px; }
+  .head-title h1 { font-size:26px; font-weight:650; letter-spacing:-1.1px; margin:0; }
+  .subline { margin:10px 0 0; color:var(--muted); font-size:12px; }
+
+  .branch-compare { margin:0 30px 22px; display:grid; grid-template-columns:1fr 48px 1fr; align-items:center; gap:12px; }
+  .branch-select { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:11px 16px; min-width:0; }
+  .branch-select label { display:block; font-size:10px; color:var(--muted); margin-bottom:1px; }
+  .branch-select select { width:100%; background:transparent; border:0; font:13px var(--font-mono); min-height:24px; padding:0; }
+  .swap { border:1px solid var(--border); border-radius:50%; width:44px; height:44px; min-height:44px; justify-self:center; font-size:19px; }
+  .swap:hover { background:var(--fg-soft); }
+  .compare-summary { margin:0 30px 20px; display:flex; align-items:center; flex-wrap:wrap; gap:22px; font-size:11px; color:var(--muted); }
+  .compare-summary b { font:600 16px var(--font-mono); color:var(--fg); margin-right:5px; }
+  .compare-summary .summary-end { margin-left:auto; display:flex; gap:6px; align-items:center; }
+
+  .work-split { display:grid; grid-template-columns:minmax(0,1fr) 292px; border-top:1px solid var(--border); min-height:480px; }
+  .history { min-width:0; }
+  .view-tabs { display:flex; gap:22px; padding:0 24px; border-bottom:1px solid var(--border); }
+  .view-tabs button { font-size:12px; padding:10px 2px; color:var(--muted); position:relative; min-height:auto; }
+  .view-tabs button[aria-selected="true"] { color:var(--fg); font-weight:650; }
+  .view-tabs button[aria-selected="true"]::after { position:absolute; content:''; height:2px; bottom:0; left:0; right:0; background:var(--fg); }
+  .filterbar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:14px 20px; }
+  .search-wrap { display:flex; align-items:center; gap:8px; flex:1; min-width:160px; padding:0 9px; background:var(--bg); border:1px solid var(--border); border-radius:6px; }
+  .search-wrap input { width:100%; min-width:0; height:36px; background:none; border:0; font-size:11px; }
+  .search-wrap .ico { width:14px; }
+  .compact-select { border:1px solid var(--border); border-radius:6px; background:var(--surface); min-height:36px; padding:0 9px; font-size:11px; }
+  .result-meta { padding:0 20px 12px; display:flex; align-items:center; justify-content:space-between; font-size:10px; color:var(--muted); gap:10px; }
+  .result-meta button { font-size:10px; text-decoration:underline; min-height:auto; }
+
+  .commit-head { height:30px; display:grid; grid-template-columns:34px 90px minmax(0,1fr) 170px; column-gap:12px; align-items:center; background:var(--bg); border-block:1px solid var(--border); padding:0 16px; color:var(--muted); font-size:10px; }
+  .commit-row { display:grid; grid-template-columns:34px 90px minmax(0,1fr) 170px; column-gap:12px; height:36px; align-items:center; padding:0 16px; border-bottom:1px solid color-mix(in oklch,var(--border) 55%,var(--surface)); cursor:pointer; text-align:left; width:100%; }
+  .commit-row:hover { background:var(--bg); }
+  .commit-row.selected { background:var(--fg-soft); }
+  .commit-row.current { box-shadow:inset 3px 0 var(--fg); }
+  .commit-title { display:block; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:500; }
+  .commit-meta { display:flex; gap:8px; align-items:center; font-size:10px; color:var(--muted); white-space:nowrap; }
+  .branch-tag { border:1px solid var(--border); border-radius:4px; padding:1px 5px; font-size:9px; font-family:var(--font-mono); }
+  .date { font:10px var(--font-mono); color:var(--muted); white-space:nowrap; }
+  .graph-dot { width:9px; height:9px; border-radius:50%; background:var(--accent); }
+
+  .detail { border-left:1px solid var(--border); padding:0 20px 22px; background:color-mix(in oklch,var(--bg) 45%,var(--surface)); min-width:0; }
+  .detail-kicker { height:45px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); font-size:11px; margin-bottom:22px; }
+  .detail h2 { font-size:18px; line-height:1.5; letter-spacing:-.5px; margin:0 0 16px; }
+  .person { display:flex; gap:9px; align-items:center; font-size:11px; }
+  .avatar { height:29px; width:29px; display:grid; place-items:center; background:var(--border); border-radius:50%; font-size:11px; font-weight:600; }
+  .detail dl { margin:20px 0; display:grid; grid-template-columns:60px minmax(0,1fr); gap:10px; font-size:11px; }
+  .detail dt { color:var(--muted); } .detail dd { margin:0; overflow-wrap:anywhere; }
+  .detail hr { margin:20px 0; border:0; border-top:1px solid var(--border); }
+  .detail-sub { font-size:11px; font-weight:600; display:flex; justify-content:space-between; margin:0 0 12px; }
+  .file-item { font-family:var(--font-mono); font-size:10px; padding:9px 0; display:flex; align-items:center; gap:8px; }
+  .file-item .file-status { background:var(--fg-soft); border-radius:4px; padding:2px 5px; }
+  .diff-small { border:1px solid var(--border); border-radius:6px; background:var(--surface); overflow:auto; font:10px/1.9 var(--font-mono); }
+  .diff-small div { padding:3px 9px; white-space:pre-wrap; }
+  .diff-add { background:var(--fg-soft); color:var(--fg); }
+  .diff-del { background:var(--border); color:var(--muted); }
+  .empty { padding:45px 20px; text-align:center; color:var(--muted); }
+  .empty strong { color:var(--fg); font-size:15px; display:block; margin-bottom:8px; }
+
+  .apply-tray { padding:15px 20px; border-top:1px solid var(--border); display:flex; align-items:center; gap:12px; background:var(--surface); }
+  .apply-tray .btn-primary { margin-left:auto; }
+  .apply-tray small { font-size:10px; color:var(--muted); display:block; }
+  .apply-tray strong { font-size:11px; }
+  .btn-primary { color:var(--surface); background:var(--accent); border-color:transparent; }
+  .btn-primary:hover:not(:disabled) { background:color-mix(in oklch,var(--accent) 85%,var(--surface)); }
+
+  .statusbar { min-height:36px; border-top:1px solid var(--border); display:flex; align-items:center; gap:18px; padding:5px 18px; background:var(--bg); font-size:10px; color:var(--muted); flex-wrap:wrap; }
+  .statusbar .right { margin-left:auto; }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<header class="appbar">
+  <div class="wordmark">
+    <svg class="mark" viewBox="0 0 28 30" fill="none" aria-hidden="true"><path d="M6 5v20M21 5v6c0 7-15 4-15 12" stroke="currentColor" stroke-width="2.5"/><circle cx="6" cy="5" r="3.5" fill="var(--surface)" stroke="currentColor" stroke-width="2.5"/><circle cx="21" cy="5" r="3.5" fill="var(--surface)" stroke="currentColor" stroke-width="2.5"/><circle cx="6" cy="25" r="3.5" fill="currentColor"/></svg>
+    Branchline
+  </div>
+  <div class="repo-tab">
+    <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h6l2 3h8v12H4z"/></svg>
+    <strong>branchline-desktop</strong>
+    <span class="neutral-tag">예제 저장소</span>
+  </div>
+  <span class="meta">로컬 작업 공간</span>
+  <div class="row" style="display:flex;gap:8px">
+    <button class="toolbar-btn"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3v11m0 0-4-4m4 4 4-4M4 19h16"/></svg>Fetch</button>
+    <button class="toolbar-btn"><svg class="ico" viewBox="0 0 24 24"><path d="M12 20V9m0 0-4 4m4-4 4 4M4 5h16"/></svg>Push</button>
+    <div class="toolbar-divider"></div>
+    <button class="toolbar-btn"><svg class="ico" viewBox="0 0 24 24"><path d="M6 3v18M18 3v5c0 5-12 3-12 9"/></svg>Branch</button>
+    <button class="toolbar-btn"><svg class="ico" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>Stash</button>
+    <button class="toolbar-btn"><svg class="ico" viewBox="0 0 24 24"><path d="M12 13V3m0 0-3.5 3.5M12 3l3.5 3.5M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg>Pop</button>
+    <div class="toolbar-divider"></div>
+    <button class="toolbar-btn"><svg class="ico" viewBox="0 0 24 24"><path d="M4 5h16v14H4zM7.5 9.5 10 12l-2.5 2.5M12.5 15h4"/></svg>Terminal</button>
+  </div>
+  <button class="btn btn-secondary">빠른 실행 <span class="meta">⌘K</span></button>
+</header>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="current-branch-indicator">
+      <span class="meta">현재 브랜치</span>
+      <strong class="num" style="overflow-wrap:anywhere">feature/branch-filter</strong>
+    </div>
+    <nav>
+      <button class="side-button" aria-current="page"><svg class="ico" viewBox="0 0 24 24"><path d="M5 4v16M12 4v6c0 5 7 3 7 10M5 10h7"/></svg>커밋 그래프</button>
+      <button class="side-button"><svg class="ico" viewBox="0 0 24 24"><path d="M4 7h15m-4-4 4 4-4 4M20 17H5m4-4-4 4 4 4"/></svg>브랜치 비교</button>
+      <button class="side-button"><svg class="ico" viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5zM9 12h6M9 16h6"/></svg>작업 변경<span class="count">3</span></button>
+      <button class="side-button"><svg class="ico" viewBox="0 0 24 24"><path d="M6 6v12M18 18V8c0-3-5-3-5-3M10 2l3 3-3 3"/></svg>요청함<span class="count">2</span></button>
+      <button class="side-button"><svg class="ico" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 14h6v6h-6zM7 10v7h7"/></svg>워크트리</button>
+    </nav>
+    <details open>
+      <summary><span style="display:flex;gap:6px;align-items:center"><svg class="ico" viewBox="0 0 24 24"><path d="M3 4h18v12H3zM9 20h6M12 16v4"/></svg>LOCAL</span><span class="num">3</span></summary>
+      <div>
+        <details class="branch-folder">
+          <summary><svg class="ico" viewBox="0 0 24 24"><path d="M3 6h6l2 3h10v10H3z"/></svg>feature</summary>
+          <button class="side-button branch-item tree-leaf">branch-filter <span class="num">↑5 ↓2</span></button>
+        </details>
+        <details class="branch-folder">
+          <summary><svg class="ico" viewBox="0 0 24 24"><path d="M3 6h6l2 3h10v10H3z"/></svg>fix</summary>
+          <button class="side-button branch-item tree-leaf">keyboard-nav <span class="num">↑1 ↓3</span></button>
+        </details>
+        <button class="side-button branch-item"><svg class="ico" viewBox="0 0 24 24"><path d="M6 3v18M18 3v5c0 5-12 3-12 9"/></svg>main</button>
+      </div>
+    </details>
+    <details>
+      <summary><span style="display:flex;gap:6px;align-items:center"><svg class="ico" viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>REMOTE</span><span class="num">2</span></summary>
+      <div>
+        <button class="side-button branch-item">origin/main</button>
+        <button class="side-button branch-item">origin/feature/branch-filter</button>
+      </div>
+    </details>
+    <details>
+      <summary><span style="display:flex;gap:6px;align-items:center"><svg class="ico" viewBox="0 0 24 24"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10zM7 7h.01"/></svg>TAGS</span><span class="num">1</span></summary>
+      <div><button class="side-button branch-item">v0.8.0</button></div>
+    </details>
+    <details>
+      <summary><span style="display:flex;gap:6px;align-items:center"><svg class="ico" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>STASHES</span><span class="num">1</span></summary>
+      <div><button class="side-button branch-item">QATAB-702 작업분</button></div>
+    </details>
+    <div class="sidebar-bottom">
+      <button class="side-button"><span aria-hidden="true">⚙</span>환경 설정</button>
+    </div>
+  </aside>
+
+  <main class="workspace">
+    <div class="workspace-head">
+      <div class="crumb">branchline-desktop / 커밋 그래프</div>
+      <div class="head-title"><h1>커밋 그래프</h1><span class="neutral-tag">예제</span></div>
+      <p class="subline">선택한 브랜치의 이력에 집중하세요. 브랜치를 눌러 바로 전환할 수 있습니다.</p>
+    </div>
+
+    <div class="branch-compare">
+      <div class="branch-select">
+        <label>조회할 브랜치</label>
+        <select><option>feature/branch-filter</option><option>fix/keyboard-nav</option><option>main</option></select>
+      </div>
+      <button class="swap" aria-label="브랜치 순서 바꾸기">⇄</button>
+      <div class="branch-select">
+        <label>이력 범위</label>
+        <select><option>전체 조상 이력</option><option>공통 조상 이후만</option></select>
+      </div>
+    </div>
+
+    <div class="compare-summary">
+      <span><b>전체 브랜치</b>로컬 브랜치 3개의 모든 커밋을 함께 표시 중</span>
+      <span>현재 체크아웃: <span class="num">feature/branch-filter</span></span>
+      <span class="summary-end"><button class="btn btn-secondary" style="padding:6px 12px;min-height:32px">작업 디렉터리 변경 3개 · 보기</button></span>
+    </div>
+
+    <div class="work-split">
+      <section class="history">
+        <div class="view-tabs" role="tablist">
+          <button role="tab" aria-selected="true">커밋 이력</button>
+          <button role="tab" aria-selected="false">변경 파일</button>
+        </div>
+        <div class="filterbar">
+          <div class="search-wrap">
+            <svg class="ico" viewBox="0 0 24 24" style="width:14px"><path d="M16 16l5 5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0"/></svg>
+            <input placeholder="메시지, 해시, 작성자, 파일 검색" />
+          </div>
+          <select class="compact-select"><option>브랜치: 전체</option></select>
+          <button class="btn btn-secondary" style="min-height:36px;padding:6px 12px">필터</button>
+        </div>
+        <div class="result-meta">
+          <span>11개 커밋 표시 · 일치하지 않는 이력은 숨김</span>
+          <button>필터 초기화</button>
+        </div>
+        <div class="commit-head">
+          <span></span><span>그래프</span><span>커밋 메시지</span><span>날짜</span>
+        </div>
+        <div id="commit-rows">
+          <button class="commit-row selected current" data-row="1">
+            <span></span><span class="graph-dot"></span>
+            <span class="commit-title">브랜치 필터 선택 UI 추가 <span class="branch-tag">feature/branch-filter</span></span>
+            <span class="commit-meta"><span class="date">2026-09-11 14:32</span></span>
+          </button>
+          <button class="commit-row" data-row="2">
+            <span></span><span class="graph-dot" style="background:var(--muted)"></span>
+            <span class="commit-title">릴리스 버전 0.9.0 준비 <span class="branch-tag">main</span></span>
+            <span class="commit-meta"><span class="date">2026-09-11 13:48</span></span>
+          </button>
+          <button class="commit-row" data-row="3">
+            <span></span><span class="graph-dot"></span>
+            <span class="commit-title">키보드 탐색 수정 사항 병합</span>
+            <span class="commit-meta"><span class="date">2026-09-11 11:15</span></span>
+          </button>
+          <button class="commit-row" data-row="4">
+            <span></span><span class="graph-dot"></span>
+            <span class="commit-title">일치하는 커밋만 그래프에 표시</span>
+            <span class="commit-meta"><span class="date">2026-09-10 17:06</span></span>
+          </button>
+          <button class="commit-row" data-row="5">
+            <span></span><span class="graph-dot" style="background:var(--muted)"></span>
+            <span class="commit-title">저장소 열기 오류 메시지 개선</span>
+            <span class="commit-meta"><span class="date">2026-09-10 15:20</span></span>
+          </button>
+          <button class="commit-row" data-row="6">
+            <span></span><span class="graph-dot"></span>
+            <span class="commit-title">브랜치별 커밋 조회 추가</span>
+            <span class="commit-meta"><span class="date">2026-09-10 10:42</span></span>
+          </button>
+          <button class="commit-row" data-row="7">
+            <span></span><span class="graph-dot" style="background:var(--muted)"></span>
+            <span class="commit-title">그래프 키보드 포커스 개선 <span class="branch-tag">fix/keyboard-nav</span></span>
+            <span class="commit-meta"><span class="date">2026-09-09 16:12</span></span>
+          </button>
+        </div>
+      </section>
+
+      <aside class="detail" id="detail-panel">
+        <div class="detail-kicker"><span class="meta">커밋 상세</span><button class="btn btn-ghost" style="font-size:11px;padding:4px 8px;min-height:auto">닫기</button></div>
+        <h2>브랜치 필터 선택 UI 추가</h2>
+        <div class="person">
+          <span class="avatar">김</span>
+          <span>김민서<span class="meta" style="display:block">2026-09-11 14:32:00</span></span>
+        </div>
+        <dl>
+          <dt>브랜치</dt><dd class="num">feature/branch-filter</dd>
+          <dt>해시</dt><dd class="num">9f2a4c1</dd>
+          <dt>부모</dt><dd class="num">7b0e3d8</dd>
+        </dl>
+        <hr />
+        <div class="detail-sub"><span>변경 파일 3개</span><span class="meta">+42 −11</span></div>
+        <div class="file-item"><span class="file-status">M</span><span>src/branch-filter.js</span></div>
+        <div class="file-item"><span class="file-status">M</span><span>styles/sidebar.css</span></div>
+        <div class="file-item"><span class="file-status">A</span><span>tests/branch-filter.spec.js</span></div>
+        <div class="diff-small" style="margin-top:14px">
+          <div class="diff-add">+ function openBranchFilterMenu() {</div>
+          <div class="diff-add">+   renderSearchInput(); renderResultList();</div>
+          <div class="diff-del">- // TODO: 브랜치 필터 미구현</div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="apply-tray">
+      <div><strong>1개 커밋 선택됨</strong><small>선택한 커밋을 현재 브랜치에 적용할 수 있습니다.</small></div>
+      <button class="btn btn-secondary">취소</button>
+      <button class="btn btn-primary">체리픽 적용</button>
+    </div>
+  </main>
+</div>
+
+<footer class="statusbar">
+  <span class="num">⑂ feature/branch-filter</span>
+  <span role="status">예제 저장소 준비됨</span>
+  <span class="right">실제 Git 및 원격 서버에 연결되지 않은 프로토타입</span>
+</footer>
+
+<script>
+  document.querySelectorAll('.commit-row').forEach(function (row) {
+    row.addEventListener('click', function () {
+      document.querySelectorAll('.commit-row').forEach(function (r) { r.classList.remove('selected'); });
+      row.classList.add('selected');
+    });
+  });
+  document.querySelectorAll('[role="tab"]').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('[role="tab"]').forEach(function (t) { t.setAttribute('aria-selected', 'false'); });
+      tab.setAttribute('aria-selected', 'true');
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Branchline — 버튼 컴포넌트</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<link rel="stylesheet" href="../tokens.css" />
+<style>
+  body { padding: 40px; max-width: 980px; margin: 0 auto; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 13px; min-height: var(--app-control-h); border-radius: var(--app-radius); border: 1px solid transparent; font-size: 12px; font-weight: 500; justify-content: center; transition: transform .05s ease, background .15s ease, border-color .15s ease; }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { color: var(--surface); background: var(--accent); border-color: transparent; }
+  .btn-primary:hover:not(:disabled) { background: color-mix(in oklch, var(--accent) 85%, var(--surface)); }
+  .btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
+  .btn-secondary:hover { background: var(--fg-soft); }
+  .btn-ghost { background: transparent; color: var(--fg); border-color: transparent; }
+  .btn-ghost:hover { color: var(--fg); background: var(--fg-soft); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .toolbar-btn { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 6px 12px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--fg); font-size: 10px; font-weight: 500; min-width: 52px; min-height: var(--app-control-h); }
+  .toolbar-btn:hover { background: var(--fg-soft); }
+  .toolbar-btn .ico { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .row-demo { display: flex; gap: var(--gap-sm); flex-wrap: wrap; align-items: center; margin-top: 14px; }
+  .section-block { margin-top: var(--gap-xl); padding: 24px; border: 1px solid var(--border); border-radius: var(--radius-lg); }
+  .toolbar-strip { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 6px 10px; gap: 2px; }
+  .state-label { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .state-col { text-align: center; }
+</style>
+</head>
+<body>
+  <p class="eyebrow">Preview · Components</p>
+  <h1 class="h2">버튼 &amp; 툴바 버튼</h1>
+  <p class="lead">화면당 primary 버튼은 하나입니다. hover는 배경만 이동하고 전경색은 절대 --muted로 낮추지 않습니다.</p>
+
+  <div class="section-block">
+    <p class="meta" style="margin-bottom:10px">기본 상태</p>
+    <div class="row-demo">
+      <button class="btn btn-primary">변경 사항 적용</button>
+      <button class="btn btn-secondary">취소</button>
+      <button class="btn btn-ghost">자세히 보기</button>
+      <button class="btn btn-primary" disabled>충돌 해결 필요</button>
+    </div>
+  </div>
+
+  <div class="section-block">
+    <p class="meta" style="margin-bottom:10px">appbar 툴바 버튼 (Fetch / Push / Branch / Stash / Pop / Terminal)</p>
+    <div class="toolbar-strip">
+      <button class="toolbar-btn"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3v11m0 0-4-4m4 4 4-4M4 19h16"/></svg>Fetch</button>
+      <button class="toolbar-btn"><svg class="ico" viewBox="0 0 24 24"><path d="M12 20V9m0 0-4 4m4-4 4 4M4 5h16"/></svg>Push</button>
+      <button class="toolbar-btn"><svg class="ico" viewBox="0 0 24 24"><path d="M6 3v18M18 3v5c0 5-12 3-12 9"/></svg>Branch</button>
+      <button class="toolbar-btn"><svg class="ico" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>Stash</button>
+      <button class="toolbar-btn"><svg class="ico" viewBox="0 0 24 24"><path d="M12 13V3m0 0-3.5 3.5M12 3l3.5 3.5M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg>Pop</button>
+      <button class="toolbar-btn"><svg class="ico" viewBox="0 0 24 24"><path d="M4 5h16v14H4zM7.5 9.5 10 12l-2.5 2.5M12.5 15h4"/></svg>Terminal</button>
+    </div>
+  </div>
+
+  <div class="section-block">
+    <p class="meta" style="margin-bottom:16px">상호작용 상태 — hover는 배경만, 대비는 절대 낮아지지 않음</p>
+    <div class="row-demo" style="gap:var(--gap-lg)">
+      <div class="state-col"><button class="btn btn-primary">기본</button><div class="state-label">default</div></div>
+      <div class="state-col"><button class="btn btn-primary" style="background:color-mix(in oklch, var(--accent) 85%, var(--surface))">호버</button><div class="state-label">:hover</div></div>
+      <div class="state-col"><button class="btn btn-primary" style="outline:2px solid var(--fg); outline-offset:3px">포커스</button><div class="state-label">:focus-visible</div></div>
+      <div class="state-col"><button class="btn btn-primary" disabled>비활성</button><div class="state-label">:disabled</div></div>
+    </div>
+  </div>
+</body>
+</html>
