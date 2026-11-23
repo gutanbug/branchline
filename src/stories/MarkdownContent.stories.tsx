@@ -23,5 +23,5 @@ export const Empty: Story = { args: { value: '' } }
 export const LinkFailure: Story = { args: { onOpenLink: fn(async () => { throw new Error('허용된 호스팅 주소가 아닙니다.') }) }, play: async ({ canvasElement }) => {
   const canvas = within(canvasElement)
   await userEvent.click(canvas.getByRole('link', { name: '검토 링크 ↗' }))
-  await expect(await canvas.findByRole('alert')).toHaveTextContent('허용된 호스팅 주소가 아닙니다.')
+  await expect(await within(canvasElement.ownerDocument.body).findByRole('alert')).toHaveTextContent('허용된 호스팅 주소가 아닙니다.')
 } }

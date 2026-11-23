@@ -12,9 +12,8 @@ export const Nested: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement), folder = canvas.getByText('ui', { selector: 'summary' })
     await userEvent.click(folder)
-    await expect(canvas.getByRole('button', { name: '이력 조회: feature/ui/buttons', hidden: true })).not.toBeVisible()
-    folder.focus()
-    await userEvent.keyboard('{Enter}')
+    await expect(canvas.queryByRole('button', { name: '이력 조회: feature/ui/buttons', hidden: true })).not.toBeInTheDocument()
+    await userEvent.click(folder)
     await userEvent.click(canvas.getByRole('button', { name: '이력 조회: feature/ui/buttons' }))
     await expect(args.onChange).toHaveBeenCalledWith('feature/ui/buttons')
   },
@@ -57,15 +56,34 @@ export const SelectedFolders: Story = {
   ] },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('button', { name: '이력 조회: feature/ui/current' })).toBeVisible()
-    await expect(canvas.getByRole('button', { name: '이력 조회: feature/api/other', hidden: true })).not.toBeVisible()
-    await expect(canvas.getByRole('button', { name: '이력 조회: origin/feature/ui/current', hidden: true })).not.toBeVisible()
+    await expect(canvas.getByRole('button', { name: '이력 조회: feature/ui/current' }).querySelector('[data-icon="branch"]')).toBeVisible()
+    await expect(canvas.getByText('ui', { selector: 'summary' }).querySelector('[data-icon="folderOpen"]')).toBeVisible()
+    await expect(canvas.getByText('fix', { selector: 'summary' }).querySelector('[data-icon="folder"]')).toBeVisible()
+    await expect(canvas.queryByRole('button', { name: '이력 조회: feature/api/other', hidden: true })).not.toBeInTheDocument()
+    await expect(canvas.queryByRole('button', { name: '이력 조회: origin/feature/ui/current', hidden: true })).not.toBeInTheDocument()
     await userEvent.click(canvas.getByRole('button', { name: 'LOCAL 전체 펼치기' }))
     await expect(canvas.getByRole('button', { name: '이력 조회: feature/api/other' })).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'LOCAL 전체 접기' }))
-    await expect(canvas.getByRole('button', { name: '이력 조회: feature/ui/current', hidden: true })).not.toBeVisible()
+    await expect(canvas.queryByRole('button', { name: '이력 조회: feature/ui/current', hidden: true })).not.toBeInTheDocument()
     await expect(canvas.getByRole('button', { name: '이력 조회: main' })).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'ORIGIN 전체 펼치기' }))
     await expect(canvas.getByRole('button', { name: '이력 조회: origin/feature/ui/current' })).toBeVisible()
+  },
+}
+
+const longBranch = 'feature/결제/payment-reconciliation-with-external-provider-and-ledger-retry'
+export const LongBranchNames: Story = {
+  decorators: [Story => <div style={{ width: 220, overflow: 'auto' }}><Story /></div>],
+  args: { revealAll: true, groups: [
+    { id: 'local', label: 'LOCAL', items: [{ id: `refs/heads/${longBranch}`, label: longBranch }] },
+    { id: 'remote:origin', label: 'ORIGIN', items: [{ id: `refs/remotes/origin/${longBranch}`, label: longBranch }] },
+  ] },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement), body = within(canvasElement.ownerDocument.body)
+    const row = canvas.getByRole('button', { name: `이력 조회: origin/${longBranch}` })
+    await userEvent.hover(row)
+    await expect(await body.findByRole('tooltip')).toHaveTextContent(`origin/${longBranch}`)
+    await userEvent.keyboard('{Escape}')
+    await expect(row).toHaveAttribute('aria-pressed', 'false')
   },
 }

@@ -19,7 +19,7 @@ console.log(JSON.stringify(${JSON.stringify(id)}==='claude'?{structured_output:r
     await page.evaluate(async id => { await window.branchline.agentPath(id); await window.branchline.setAgent(id, true) }, id)
   }
   await page.getByRole('button', { name: 'AI Agents', exact: true }).click()
-  await page.getByRole('button', { name: /^내 작업 / }).click()
+  await page.getByRole('button', { name: '내 작업', exact: true }).click()
   const chat = page.getByLabel('Agent에게 전달할 요청', { exact: true })
   await chat.waitFor()
   for (const id of ['codex', 'claude', 'gemini']) {
@@ -35,9 +35,13 @@ console.log(JSON.stringify(${JSON.stringify(id)}==='claude'?{structured_output:r
   }
   await page.getByRole('combobox', { name: '대화 Agent', exact: true }).selectOption('codex')
   assert.equal(await page.getByRole('log').getByText('gemini 수정안입니다. 테스트는 실행하지 않았습니다.', { exact: true }).count(), 0)
+  await page.getByRole('button', { name: '수정안을 편집 초안으로 가져오기', exact: true }).click()
+  assert.equal(await page.getByRole('dialog').count(), 0)
+  assert.equal(await page.getByLabel('해결 결과 편집', { exact: true }).inputValue(), '양쪽 변경을 보존한 결과\n')
+  assert.equal(await readFile(path.join(cwd, file), 'utf8'), original)
   await chat.fill('후속 질문 초안')
   await page.getByRole('button', { name: 'AI Agents', exact: true }).click()
-  await page.getByRole('button', { name: /^내 작업 / }).click()
+  await page.getByRole('button', { name: '내 작업', exact: true }).click()
   assert.equal(await chat.inputValue(), '후속 질문 초안')
   await chat.fill('기다려')
   await page.getByRole('button', { name: '선택한 Agent에 전송', exact: true }).click()

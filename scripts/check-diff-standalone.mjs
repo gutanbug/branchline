@@ -11,7 +11,7 @@ const app = await electron.launch({ executablePath: require('electron'), args: [
 const page = await app.firstWindow()
 const axe = await readFile(require.resolve('axe-core/axe.min.js', { paths: [require.resolve('@storybook/addon-a11y/package.json')] }), 'utf8')
 try {
-  await page.getByRole('heading', { name: /변경을 살펴보고/ }).waitFor()
+  await page.getByRole('heading', { name: '저장소에서 작업 시작', exact: true }).waitFor()
   if (process.env.BRANCHLINE_SCREENSHOTS) await mkdir(process.env.BRANCHLINE_SCREENSHOTS, { recursive: true })
   await checkDiffViewer(app, page, root, async page => { await page.evaluate(axe); assert.deepEqual(await page.evaluate(async () => (await window.axe.run(document, { runOnly: ['wcag2a', 'wcag2aa', 'wcag21aa'] })).violations.map(item => ({ id: item.id, nodes: item.nodes.map(node => node.target) }))), []) })
 } catch (error) { await page.screenshot({ path: '/tmp/branchline-diff-failure.png' }); throw error }

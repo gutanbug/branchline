@@ -3,8 +3,8 @@ import { formatCommitDate, parseCommitPreamble } from './commit-message'
 
 export function CommitMessage({ title, body }: { title: string; body: string }) {
   return <section className="bl-commit-message" aria-label="커밋 메시지 카드">
-    <div className="bl-commit-message-title"><small>제목 · Title</small><h3>{title || '제목 없음'}</h3></div>
-    <div className="bl-commit-message-body" tabIndex={0} role="region" aria-label="커밋 본문"><small>본문 · Body</small><p>{body || '본문이 없는 커밋입니다.'}</p></div>
+    <div className="bl-commit-message-title"><small>제목</small><h3>{title || '제목 없음'}</h3></div>
+    <div className="bl-commit-message-body" tabIndex={0} role="region" aria-label="커밋 본문"><small>본문</small><p>{body || '본문이 없는 커밋입니다.'}</p></div>
   </section>
 }
 export function CommitMetadata({ value }: { value: string }) {

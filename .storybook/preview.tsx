@@ -1,10 +1,11 @@
+import { ToastProvider } from '../src/design-system/Toast'
 import type { Preview } from '@storybook/react-vite'
 import '../src/index.css'
 import { theme } from './theme'
 
 const preview: Preview = {
   tags: ['autodocs'],
-  decorators: [(Story) => <div className="bl-system" lang="ko"><Story /></div>],
+  decorators: [(Story) => <ToastProvider><div className="bl-system" lang="ko"><Story /></div></ToastProvider>],
   parameters: {
     layout: 'padded',
     controls: { expanded: true },

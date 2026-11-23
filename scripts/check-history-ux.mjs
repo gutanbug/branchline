@@ -12,7 +12,7 @@ let app
 try {
  app = await electron.launch({ executablePath: require('electron'), args: [path.resolve('electron/main.cjs')], env })
  const page = await app.firstWindow(); page.setDefaultTimeout(15000); await page.setViewportSize({ width: 1440, height: 950 })
- await page.getByRole('heading', { name: /변경을 살펴보고/ }).waitFor()
+ await page.getByRole('heading', { name: '저장소에서 작업 시작', exact: true }).waitFor()
  await checkRepositoryGraph(app, page, root, async page => { await page.evaluate(axe); assert.deepEqual(await page.evaluate(async () => (await window.axe.run(document, { runOnly: ['wcag2a', 'wcag2aa', 'wcag21aa'] })).violations.map(item => item.id)), []) })
 } catch (error) { await (await app?.firstWindow())?.screenshot({ path: 'docs/history-ux-2026-09-14/failure.png' }).catch(() => {}); throw error }
 finally { await app?.evaluate(({ app }) => app.exit(0)).catch(() => {}); await rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }) }

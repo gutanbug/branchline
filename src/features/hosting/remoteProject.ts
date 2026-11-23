@@ -9,3 +9,6 @@ export function remoteProject(remote: string, host?: string) {
     return { host: server, project }
   } catch { return null }
 }
+
+// file:// URLs, absolute/relative paths and Windows drive paths point at a folder, not a hosting service.
+export const isLocalRemote = (remote: string) => /^file:\/\//i.test(remote) || /^(?:[\\/]|\.{1,2}[\\/]|~[\\/]|[A-Za-z]:[\\/])/.test(remote)

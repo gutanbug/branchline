@@ -27,7 +27,7 @@ console.log(JSON.stringify({message:'제목과 본문 제안입니다. 실행한
   await app.evaluate(({ dialog }, executable) => { dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [executable] }) }, executable)
   await page.evaluate(async () => { await window.branchline.agentPath('codex'); await window.branchline.setAgent('codex', true) })
   await app.evaluate(({ dialog }, cwd) => { dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [cwd] }) }, cwd)
-  await page.setViewportSize({ width: 1440, height: 950 }); await page.getByRole('button', { name: '저장소 열기', exact: true }).first().click()
+  await page.setViewportSize({ width: 1440, height: 950 }); await page.getByRole('button', { name: '저장소 추가', exact: true }).click(); await page.getByRole('menuitem', { name: '저장소 열기', exact: true }).click()
   const workspace = page.locator('.bl-repository:visible'), graph = workspace.locator('.bl-commit-graph')
   const headRow = graph.locator('.bl-graph-row').filter({ hasText: '[TASK-17] 서비스 테스트 추가' })
   await headRow.waitFor(); assert.match(await headRow.locator('time').innerText(), /\d{2}:52/); assert.ok(!(await headRow.locator('time').innerText()).includes(':42'))
@@ -80,7 +80,8 @@ console.log(JSON.stringify({message:'제목과 본문 제안입니다. 실행한
   if (process.env.BRANCHLINE_SCREENSHOTS) await page.screenshot({ path: path.join(process.env.BRANCHLINE_SCREENSHOTS, 'amend-review-narrow.png') })
   await execute.click(); await dialog.waitFor({ state: 'hidden' })
   assert.equal(await git.git(cwd, ['show', 'HEAD:file.txt']), 'staged\n'); assert.equal(await readFile(path.join(cwd, 'file.txt'), 'utf8'), 'working\n')
-  await graph.locator('.bl-graph-row').filter({ hasText: '기반 커밋' }).click(); await inspector.getByRole('button', { name: 'Amend', exact: true }).waitFor(); assert.equal(await inspector.getByRole('button', { name: 'Amend', exact: true }).isEnabled(), false)
+  // Amend applies only to HEAD; other commits do not show the action at all.
+  await graph.locator('.bl-graph-row').filter({ hasText: '기반 커밋' }).click(); await inspector.getByRole('button', { name: '전체 커밋 SHA 복사', exact: true }).waitFor(); assert.equal(await inspector.getByRole('button', { name: 'Amend', exact: true }).count(), 0)
   await page.setViewportSize({ width: 1440, height: 950 })
   console.log('PASS: minute timestamps, title/body cards, nested modal Escape, AI message proposals, reviewed message-only/staged Amend, published acknowledgment, stale recovery, parent/index/worktree preservation and narrow accessibility')
 }

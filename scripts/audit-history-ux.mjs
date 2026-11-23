@@ -16,9 +16,9 @@ let app
 try {
  app = await electron.launch({ executablePath: require('electron'), args: [path.resolve('electron/main.cjs')], env })
  const page = await app.firstWindow(); page.setDefaultTimeout(10000); await page.setViewportSize({ width: 1440, height: 950 })
- await page.getByRole('heading', { name: /변경을 살펴보고/ }).waitFor()
+ await page.getByRole('heading', { name: '저장소에서 작업 시작', exact: true }).waitFor()
  await app.evaluate(({ dialog }, cwd) => { dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [cwd] }) }, cwd)
- await page.getByRole('button', { name: '저장소 열기', exact: true }).first().click()
+ await page.getByRole('button', { name: '저장소 추가', exact: true }).click(); await page.getByRole('menuitem', { name: '저장소 열기', exact: true }).click()
  const graph = page.locator('.bl-commit-graph:visible'), row = graph.getByRole('button').first()
  await row.waitFor(); await page.screenshot({ path: path.join(output, '01-before-history.png') })
  await row.click(); await page.getByRole('complementary', { name: '커밋 상세', exact: true }).getByLabel('변경 내용', { exact: true }).waitFor()

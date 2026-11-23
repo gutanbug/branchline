@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { Button, Dialog } from './components'
+import { Dialog } from './components'
+import { IconButton } from './IconButton'
 
 export function InspectorPanel({ title, summary, children, onClose, navigationKey, integratedToolbar = false }: { integratedToolbar?: boolean; navigationKey?: unknown; title: string; summary?: ReactNode; children: ReactNode | ((expanded: boolean, actions: ReactNode) => ReactNode); onClose?: () => void }) {
   const [isExpanded, setExpanded] = useState(false)
@@ -16,7 +17,7 @@ export function InspectorPanel({ title, summary, children, onClose, navigationKe
     if (!isExpanded && restoreFocus.current) { expandButton.current?.focus({ preventScroll: true }); restoreFocus.current = false }
     return () => content.remove()
   }, [content, isExpanded, title])
-  const actions = <div className="bl-actions">{(!integratedToolbar || !isExpanded) && <Button ref={expandButton} aria-label={`${title} 크게 보기`} onClick={() => { setExpanded(true); expanded.current?.showModal() }}>크게 보기</Button>}{onClose && <Button aria-label={`${title} 닫기`} onClick={onClose}>선택 해제</Button>}</div>
+  const actions = <div className="bl-actions">{(!integratedToolbar || !isExpanded) && <IconButton ref={expandButton} icon="expand" label={`${title} 크게 보기`} onClick={() => { setExpanded(true); expanded.current?.showModal() }} />}{onClose && <IconButton icon="close" label={`${title} 닫기`} onClick={onClose} />}</div>
   return <aside className="bl-inspector" aria-label={title} onKeyDown={event => { if (event.key === 'Escape' && !event.nativeEvent.isComposing && onClose && !expanded.current?.open) { event.preventDefault(); event.stopPropagation(); onClose() } }}>
     {!integratedToolbar && <header className="bl-inspector-header"><div className="bl-inspector-heading"><h2>{title}</h2>{actions}</div>{summary && !isExpanded && <div className="bl-inspector-summary">{summary}</div>}</header>}
     <div ref={inlineSlot} className="bl-inspector-slot" />

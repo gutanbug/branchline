@@ -22,7 +22,7 @@ export async function checkRemoteMonitor(app, page, root, accessibility) {
   await publish('incoming one')
   await app.evaluate(({ dialog }, cwd) => { dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [cwd] }) }, cwd)
   await page.setViewportSize({ width: 1440, height: 950 })
-  await page.getByRole('button', { name: '저장소 열기', exact: true }).first().click()
+  await page.getByRole('button', { name: '저장소 추가', exact: true }).click(); await page.getByRole('menuitem', { name: '저장소 열기', exact: true }).click()
   const sidebar = page.getByRole('region', { name: '현재 저장소 탐색' }), toolbar = page.getByRole('group', { name: 'Git 빠른 작업' })
   await toolbar.getByLabel('받을 커밋 1개').first().waitFor()
   await toolbar.getByLabel('보낼 커밋 1개').waitFor()
@@ -35,7 +35,10 @@ export async function checkRemoteMonitor(app, page, root, accessibility) {
   await sidebar.getByRole('button', { name: 'LOCAL 전체 접기', exact: true }).click()
   assert.equal(await current.isVisible(), false)
   await sidebar.getByLabel('브랜치·Stash·Worktree 찾기').fill('current'); await current.waitFor()
-  await sidebar.getByRole('button', { name: '브랜치 검색 지우기' }).click(); await current.waitFor()
+  await sidebar.getByRole('button', { name: '브랜치 검색 지우기' }).click()
+  await current.waitFor({ state: 'hidden' })
+  await sidebar.getByRole('button', { name: 'LOCAL 전체 펼치기', exact: true }).click()
+  await current.waitFor()
   // Move both clocks: exercise the actual 60-second renderer timer and main-process cooldown.
   await app.evaluate(() => { globalThis.monitorClock = Date.now; globalThis.monitorOffset = 0; Date.now = () => globalThis.monitorClock() + globalThis.monitorOffset })
   async function tick() { await app.evaluate(() => { globalThis.monitorOffset += 60001 }); await page.clock.fastForward(60001) }

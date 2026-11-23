@@ -1,8 +1,9 @@
+import { ToastMessage } from '../../design-system'
 import { useEffect, useRef, useState } from 'react'
-import { Button, Checkbox, Dialog, Notice, SelectField, TextField } from '../../design-system'
+import { Button, IconButton, Checkbox, Dialog, Notice, SelectField, TextField } from '../../design-system'
 import type { DesktopAPI, HostAccounts, HostDevice } from '../../app/types'
 
-export function AccountConnections({ api, accounts, onChange }: { api: DesktopAPI; accounts: HostAccounts; onChange: (value: HostAccounts, selected?: string) => void }) {
+export function AccountConnections({ api, accounts, onChange, connectLabel, embedded = false }: { connectLabel?: string; embedded?: boolean; api: DesktopAPI; accounts: HostAccounts; onChange: (value: HostAccounts, selected?: string) => void }) {
   const dialog = useRef<HTMLDialogElement>(null), forgetDialog = useRef<HTMLDialogElement>(null), clientInput = useRef<HTMLInputElement>(null)
   const pending = useRef<string | null>(null)
   const [method, setMethod] = useState('oauth'), [origin, setOrigin] = useState('https://gitlab.com'), [pat, setPat] = useState('')
@@ -11,6 +12,7 @@ export function AccountConnections({ api, accounts, onChange }: { api: DesktopAP
   const [defaultsBusy, setDefaultsBusy] = useState(true), [defaultsError, setDefaultsError] = useState(''), [defaultsWarning, setDefaultsWarning] = useState('')
   const [revision, setRevision] = useState(0)
   const [clientId, setClientId] = useState(''), [privateRepos, setPrivateRepos] = useState(false), [persistent, setPersistent] = useState(false), [writeAccess, setWriteAccess] = useState(false)
+  const [messageTone, setMessageTone] = useState<'success' | 'info' | 'warning'>('success')
   const [device, setDevice] = useState<HostDevice | null>(null), [busy, setBusy] = useState(false), [error, setError] = useState(''), [fieldError, setFieldError] = useState(''), [message, setMessage] = useState('')
   const [forget, setForget] = useState(''), [forgetError, setForgetError] = useState('')
   useEffect(() => {
@@ -34,7 +36,7 @@ export function AccountConnections({ api, accounts, onChange }: { api: DesktopAP
           const next = await api.hostingAccounts()
           if (!live) return
           pending.current = null; setDevice(null)
-          onChange(next, result.account); reloadDefaults(); setCustom(false); setClientId(''); setMessage(result.warning || '계정이 연결되었습니다. 현재 저장소의 프로젝트를 조회합니다.'); dialog.current?.close()
+          onChange(next, result.account); reloadDefaults(); setCustom(false); setClientId(''); setMessageTone(result.warning ? 'warning' : 'success'); setMessage(result.warning || '계정이 연결되었습니다. 현재 저장소의 프로젝트를 조회합니다.'); dialog.current?.close()
         }
       } catch (e) { if (live) { pending.current = null; setDevice(null); setError((e as Error).message) } }
     }, Math.max(0, Math.min(device.nextAt, device.expiresAt) - Date.now()))
@@ -43,9 +45,9 @@ export function AccountConnections({ api, accounts, onChange }: { api: DesktopAP
   async function start() {
     if (busy || method === 'oauth' && defaultsBusy || device) return
     if (provider === 'gitlab' && method === 'pat') {
-      setBusy(true); setError('')
+      setBusy(true); setError(''); setMessage('')
       const token = pat; setPat('')
-      try { const result = await api.hostingPat({ origin: origin.trim(), token, persistent, writeAccess }); onChange(await api.hostingAccounts(), result.account); setMessage('GitLab PAT 계정이 연결되었습니다.'); dialog.current?.close() } catch (e) { setError((e as Error).message) } finally { setBusy(false) }
+      try { const result = await api.hostingPat({ origin: origin.trim(), token, persistent, writeAccess }); onChange(await api.hostingAccounts(), result.account); setMessageTone('success'); setMessage('GitLab PAT 계정이 연결되었습니다.'); dialog.current?.close() } catch (e) { setError((e as Error).message) } finally { setBusy(false) }
       return
     }
     setError(''); setFieldError(''); setMessage('')
@@ -56,20 +58,19 @@ export function AccountConnections({ api, accounts, onChange }: { api: DesktopAP
   }
   async function cancel() {
     if (!device) return
-    try { await api.hostingCancel(device.id); pending.current = null; setDevice(null); setMessage('연결 요청을 취소했습니다.'); dialog.current?.close() } catch (e) { setError((e as Error).message) }
+    try { await api.hostingCancel(device.id); pending.current = null; setDevice(null); setMessageTone('info'); setMessage('연결 요청을 취소했습니다.'); dialog.current?.close() } catch (e) { setError((e as Error).message) }
   }
   async function disconnect() {
-    setBusy(true); setForgetError('')
-    try { onChange(await api.hostingForget(forget)); setMessage('Branchline 계정 연결을 해제했습니다.'); forgetDialog.current?.close() } catch (e) { setForgetError((e as Error).message) } finally { setBusy(false) }
+    setBusy(true); setForgetError(''); setMessage('')
+    try { onChange(await api.hostingForget(forget)); setMessageTone('success'); setMessage('Branchline 계정 연결을 해제했습니다.'); forgetDialog.current?.close() } catch (e) { setForgetError((e as Error).message) } finally { setBusy(false) }
   }
-  return <section className="bl-sync-section" aria-label="호스팅 계정">
-    <div className="bl-row-between"><h2>호스팅 계정</h2><div className="bl-actions"><Button disabled={busy} onClick={() => { void api.hostingAccounts().then(value => onChange(value)).catch(e => setMessage(e.message)) }}>계정 상태 새로고침</Button><Button disabled={busy} onClick={() => { setError(''); setFieldError(''); reloadDefaults(); dialog.current?.showModal() }}>계정 연결</Button></div></div>
-    <p className="bl-muted">GitHub · GitLab · 회사 GitLab / 호스팅 API 계정을 연결합니다.</p>
+  const connect = <Button disabled={busy} onClick={() => { setError(''); setFieldError(''); reloadDefaults(); dialog.current?.showModal() }}>{connectLabel || '계정 연결'}</Button>
+  return <section className={connectLabel ? undefined : "bl-sync-section"} aria-label="호스팅 계정">
+    {connectLabel ? connect : <div className="bl-row-between">{embedded ? <p className="bl-muted">GitHub · GitLab · 회사 GitLab / 호스팅 API 계정을 연결합니다.</p> : <div><h2>호스팅 계정</h2><p className="bl-muted">GitHub · GitLab · 회사 GitLab / 호스팅 API 계정을 연결합니다.</p></div>}<div className="bl-actions"><IconButton icon="refresh" label="계정 상태 새로고침" disabled={busy} onClick={() => { void api.hostingAccounts().then(value => onChange(value)).catch(e => setError(e.message)) }} />{connect}</div></div>}
     {accounts.warning && <Notice tone="error">{accounts.warning}</Notice>}
-    {message && <Notice>{message}</Notice>}
-    {accounts.accounts.map(a => <article className="bl-host-account" key={a.key}><div><strong>{a.host} / {a.login}</strong><p>{a.persistent ? 'OS 암호화 저장' : '이번 앱 세션에서만 사용'}{a.reconnect ? ' · 재연결 필요' : ''}</p><small>승인 권한: {a.scope} · 앱 원격 쓰기 {a.writeAccess ? '허용' : '비활성'}</small>{a.expiresAt && <small>토큰 만료: {new Date(a.expiresAt).toLocaleString('ko-KR')} · 갱신 가능 여부에 따라 자동 갱신 또는 재연결</small>}</div><Button aria-label={`${a.host} ${a.login} 연결 해제`} onClick={() => { setForget(a.key); setForgetError(''); forgetDialog.current?.showModal() }}>연결 해제</Button></article>)}
+    <ToastMessage scope="호스팅 계정" tone={messageTone} message={message} /><ToastMessage scope="호스팅 계정" tone="error" message={error} />
+    {!connectLabel && accounts.accounts.map(a => <article className="bl-host-account" key={a.key}><div><strong>{a.host} / {a.login}</strong><p>{a.persistent ? 'OS 암호화 저장' : '이번 앱 세션에서만 사용'}{a.reconnect ? ' · 재연결 필요' : ''}</p><small>승인 권한: {a.scope} · 앱 원격 쓰기 {a.writeAccess ? '허용' : '비활성'}</small>{a.expiresAt && <small>토큰 만료: {new Date(a.expiresAt).toLocaleString('ko-KR')} · 갱신 가능 여부에 따라 자동 갱신 또는 재연결</small>}</div><Button aria-label={`${a.host} ${a.login} 연결 해제`} onClick={() => { setForget(a.key); setForgetError(''); forgetDialog.current?.showModal() }}>연결 해제</Button></article>)}
     <Dialog dialogRef={dialog} title="호스팅 계정 연결" onClose={() => setPat('')} busy={busy || !!device}>
-      {error && <Notice tone="error">{error}</Notice>}
       {device ? <div className="bl-host-device"><Notice>시스템 브라우저에서 아래 코드를 확인하고 승인하세요. 승인 결과를 기다리고 있습니다.</Notice><TextField label="승인 코드" value={device.userCode} readOnly /><p className="bl-path">{device.url}</p><p>만료 {new Date(device.expiresAt).toLocaleTimeString('ko-KR')}</p><div className="bl-actions"><Button variant="primary" onClick={() => { void api.hostingVerify(device.id).catch(e => setError(e.message)) }}>브라우저에서 승인</Button><Button onClick={() => void cancel()}>연결 취소</Button></div></div>
         : <form noValidate onSubmit={event => { event.preventDefault(); void start() }} onKeyDown={event => { if (event.key === 'Enter' && event.nativeEvent.isComposing) event.preventDefault() }}>
           <div className="bl-host-form"><SelectField label="호스팅 제공자" value={provider} onChange={value => { setProvider(value as typeof provider); setMethod('oauth'); setPat(''); setClientId(''); setCustom(false); setWriteAccess(false); setFieldError('') }} options={[{ value: 'github', label: 'GitHub' }, { value: 'gitlab', label: 'GitLab' }]} disabled={busy} />
@@ -88,7 +89,7 @@ export function AccountConnections({ api, accounts, onChange }: { api: DesktopAP
     </Dialog>
     <Dialog dialogRef={forgetDialog} title="계정 연결 해제" busy={busy}>
       <p>{accounts.accounts.find(a => a.key === forget)?.login} 계정의 Branchline 보관 인증을 삭제합니다. 원격 저장소와 Git 인증은 유지됩니다.</p><Notice>제공자 측 접근 권한 철회는 GitHub Settings → Applications 또는 GitLab Preferences → Applications 또는 Access Tokens에서 별도로 진행하세요.</Notice>
-      {forgetError && <Notice tone="error">{forgetError}</Notice>}<div className="bl-actions bl-dialog-actions"><Button variant="primary" loading={busy} onClick={() => void disconnect()}>연결 해제 확인</Button></div>
+      <ToastMessage scope="계정 연결 해제" tone="error" message={forgetError} /><div className="bl-actions bl-dialog-actions"><Button variant="primary" loading={busy} onClick={() => void disconnect()}>연결 해제 확인</Button></div>
     </Dialog>
   </section>
 }

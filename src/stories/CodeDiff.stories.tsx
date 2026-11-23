@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, fn, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { CodeDiff } from '../design-system'
 import { parseDiff, splitLines } from '../design-system/diff-model'
 const patch = `diff --git a/config.yml b/config.yml
@@ -70,4 +70,12 @@ export const StageHunks: Story = { args: { value: patch.split('diff --git a/new.
   await userEvent.click(canvas.getByRole('button', { name: '좌우 비교' }))
   await userEvent.click(canvas.getByRole('button', { name: '변경 구간 1 구간 스테이징' }))
   await expect(args.hunkAction?.onApply).toHaveBeenCalledWith(0)
+} }
+export const DeletedCommentLine: Story = { args: { value: patch, location: { side: 'old', line: 40 } }, play: async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  await expect(await canvas.findByRole('region', { name: '좌우 diff 코드' })).toBeVisible()
+  await waitFor(() => expect(canvas.getByLabelText('이전 40행')).toHaveFocus())
+} }
+export const UnavailableCommentLine: Story = { args: { value: patch, location: { side: 'next', line: 99 } }, play: async ({ canvasElement }) => {
+  await expect(await within(canvasElement).findByText('현재 diff에 댓글이 달린 줄이 포함되어 있지 않습니다.')).toBeVisible()
 } }

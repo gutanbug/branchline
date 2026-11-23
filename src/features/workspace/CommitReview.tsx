@@ -2,7 +2,7 @@ import { useRef, useState, type ReactNode } from 'react'
 import { CodeDiff, ContentTabs, DiffFileBrowser, InspectorPanel, Notice } from '../../design-system'
 import type { DiffFileSelection } from '../../design-system/DiffFileList'
 
-export function CommitReview({ graph, sha, title, summary, details, onClose, visit, working }: { working?: { content: ReactNode; visit: number; dirty: boolean; onClose: () => void }; graph: ReactNode; sha?: string; visit?: number; title: string; summary: ReactNode; details?: { value: string; error: string }; onClose: () => void }) {
+export function CommitReview({ hidden, graph, sha, title, summary, details, onClose, visit, working }: { hidden?: boolean; working?: { content: ReactNode; visit: number; dirty: boolean; onClose: () => void }; graph: ReactNode; sha?: string; visit?: number; title: string; summary: ReactNode; details?: { value: string; error: string }; onClose: () => void }) {
   const root = useRef<HTMLDivElement>(null)
   const scope = `${sha || ''}/${visit || 0}`
   const [opened, setOpened] = useState<{ scope: string; files: DiffFileSelection[]; active: string }>({ scope, files: [], active: working ? 'working' : 'graph' })
@@ -11,11 +11,11 @@ export function CommitReview({ graph, sha, title, summary, details, onClose, vis
   if (opened.scope !== scope) setOpened({ scope, files: [], active: 'graph' })
   const files = opened.scope === scope ? opened.files : [], active = opened.scope === scope ? opened.active : 'graph'
   function close(id: string) { if (id === 'working') { working?.onClose(); return } setOpened(previous => ({ ...previous, files: previous.files.filter(file => file.id !== id), active: previous.active === id ? 'graph' : previous.active })) }
-  return <div ref={root} className={`bl-work-columns bl-history-columns bl-graph-columns ${active !== 'graph' ? 'bl-review-file-open' : ''} ${sha ? '' : 'bl-history-unselected'} ${active === 'working' ? 'bl-working-file-open' : ''}`} onKeyDownCapture={event => {
+  return <div hidden={hidden} ref={root} className={`bl-work-columns bl-history-columns bl-graph-columns ${active !== 'graph' ? 'bl-review-file-open' : ''} ${sha ? '' : 'bl-history-unselected'} ${active === 'working' ? 'bl-working-file-open' : ''}`} onKeyDownCapture={event => {
     if (active === 'graph' || event.key !== 'Escape' || event.nativeEvent.isComposing || document.querySelector('dialog[open]') || (event.target instanceof Element && event.target.closest('select,[role=menu],[role=listbox]'))) return
     event.preventDefault(); event.stopPropagation(); close(active)
   }}>
-    <ContentTabs label="커밋 그래프와 파일 변경" selected={active} onSelect={active => setOpened(previous => ({ ...previous, active }))} onClose={close} tabs={[
+    <ContentTabs hideSingleTab label="커밋 그래프와 파일 변경" selected={active} onSelect={active => setOpened(previous => ({ ...previous, active }))} onClose={close} tabs={[
       { id: 'graph', label: '그래프', content: graph },
       ...(working ? [{ id: 'working', label: `작업 폴더${working.dirty ? ' · 수정 중' : ''}`, closable: true, content: working.content }] : []),
       ...files.map(file => ({ id: file.id, label: file.path, closable: true, content: <CodeDiff value={file.value} filename={file.path} /> })),

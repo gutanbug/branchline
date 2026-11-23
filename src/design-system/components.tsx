@@ -1,6 +1,8 @@
 import { useId, useRef, useState } from 'react'
 import type { ButtonHTMLAttributes, InputHTMLAttributes, TextareaHTMLAttributes, ReactNode, RefObject, Ref } from 'react'
 import mark from '../../branchline-design-system-handoff/assets/branchline-mark.svg'
+import { Tooltip } from './Tooltip'
+import { DotPattern } from './DotPattern'
 
 export function Brand() {
   return <span className="wordmark"><img className="mark" src={mark} alt="" />branchline</span>
@@ -18,11 +20,11 @@ export function Badge({ children, variant = 'neutral' }: { children: ReactNode; 
   return <span className={variant === 'branch' ? 'branch-tag' : 'neutral-tag'}>{children}</span>
 }
 
-export function TextField({ label, hint, error, id, ref, ...props }: InputHTMLAttributes<HTMLInputElement> & { label: string; hint?: string; error?: string; ref?: RefObject<HTMLInputElement | null> }) {
+export function TextField({ label, hideLabel, hint, error, id, ref, ...props }: InputHTMLAttributes<HTMLInputElement> & { label: string; hideLabel?: boolean; hint?: string; error?: string; ref?: RefObject<HTMLInputElement | null> }) {
   const generated = useId()
   const fieldId = id ?? generated
   const description = [props['aria-describedby'], hint && `${fieldId}-hint`, error && `${fieldId}-error`].filter(Boolean).join(' ') || undefined
-  return <div className="field"><label htmlFor={fieldId}>{label}</label><input ref={ref} {...props} id={fieldId} className={`input ${props.className ?? ''}`} aria-invalid={error ? true : props['aria-invalid']} aria-describedby={description} />{hint && <small id={`${fieldId}-hint`}>{hint}</small>}{error && <small id={`${fieldId}-error`} role="alert">⚠ {error}</small>}</div>
+  return <div className="field"><div className="bl-field-label"><label className={hideLabel ? 'sr-only' : undefined} htmlFor={fieldId}>{label}</label>{hint && <Tooltip content={hint}><Button variant="ghost" className="bl-field-help" onClick={event => event.currentTarget.focus()} aria-label={`${label} 도움말`}>?</Button></Tooltip>}</div><input ref={ref} {...props} id={fieldId} className={`input ${props.className ?? ''}`} aria-invalid={error ? true : props['aria-invalid']} aria-describedby={description} />{hint && <span className="sr-only" id={`${fieldId}-hint`}>{hint}</span>}{error && <small id={`${fieldId}-error`} role="alert">⚠ {error}</small>}</div>
 }
 
 export function TextArea({ label, id, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string }) {
@@ -35,8 +37,8 @@ export function Checkbox({ label, ...props }: Omit<InputHTMLAttributes<HTMLInput
   return <label className="bl-checkbox"><input {...props} type="checkbox" /><span>{label}</span></label>
 }
 
-export function EmptyState({ title = '커밋을 선택하세요', children = '목록에서 커밋을 선택하면 상세 정보와 변경 내용을 확인할 수 있습니다.' }: { title?: string; children?: ReactNode }) {
-  return <div className="empty"><strong>{title}</strong><p>{children}</p></div>
+export function EmptyState({ title = '커밋을 선택하세요', children = '목록에서 커밋을 선택하면 상세 정보와 변경 내용을 확인할 수 있습니다.', decorated = false, action }: { title?: string; children?: ReactNode; decorated?: boolean; action?: ReactNode }) {
+  return <div className="empty" data-decorated={decorated || undefined}>{decorated && <DotPattern />}<strong>{title}</strong><p>{children}</p>{action && <div className="bl-empty-action">{action}</div>}</div>
 }
 
 export function Dialog({ dialogRef, title, children, onClose, busy = false, size = 'default' }: { dialogRef: RefObject<HTMLDialogElement | null>; title: string; children: ReactNode; onClose?: () => void; busy?: boolean; size?: 'default' | 'wide' }) {
@@ -48,9 +50,10 @@ export function Notice({ children, tone = 'info', compact = false, className = '
   return <div className={`bl-notice ${tone === 'error' ? 'bl-notice-error' : ''} ${compact ? 'bl-notice-compact' : ''} ${className}`} role={tone === 'error' ? 'alert' : 'status'}>{children}</div>
 }
 
-export function Disclosure({ title, children, initiallyOpen = false, open, onOpenChange }: { title: string; children: ReactNode; initiallyOpen?: boolean; open?: boolean; onOpenChange?: (open: boolean) => void }) {
+/** `section` reads as a full-width row with an explicit 펼치기/접기 cue; `tree` stays compact for folder/branch trees. */
+export function Disclosure({ title, children, initiallyOpen = false, open, onOpenChange, lazy = false, variant = 'section' }: { title: ReactNode; lazy?: boolean; children: ReactNode; initiallyOpen?: boolean; open?: boolean; onOpenChange?: (open: boolean) => void; variant?: 'section' | 'tree' }) {
   const [localOpen, setLocalOpen] = useState(initiallyOpen)
-  return <details className="bl-disclosure" open={open ?? localOpen} onToggle={event => { if (open === undefined) setLocalOpen(event.currentTarget.open) }}><summary onClick={open === undefined ? undefined : event => { event.preventDefault(); onOpenChange?.(!open) }}>{title}</summary><div>{children}</div></details>
+  return <details className="bl-disclosure" data-variant={variant} open={open ?? localOpen} onToggle={event => { if (open === undefined) setLocalOpen(event.currentTarget.open) }}><summary onClick={open === undefined ? undefined : event => { event.preventDefault(); onOpenChange?.(!open) }}>{title}</summary><div>{(!lazy || (open ?? localOpen)) && children}</div></details>
 }
 
 export function UsageMeter({ value, label }: { value: number; label: string }) {

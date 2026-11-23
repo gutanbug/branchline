@@ -3,7 +3,7 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  optimizeDeps: { include: ['react-dom', '@base-ui/react/context-menu', '@base-ui/react/menu'] },
+  optimizeDeps: { include: ['react-dom', '@base-ui/react/context-menu', '@base-ui/react/menu', '@base-ui/react/toast', '@base-ui/react/toggle', '@base-ui/react/toggle-group'] },
   plugins: [react(), {
     name: 'desktop-content-security-policy',
     apply: 'build',

@@ -12,7 +12,7 @@ export async function checkAuditFixes(app, page, root, accessibility) {
   const head = (await git.state(cwd)).head
   await app.evaluate(({ dialog }, cwd) => { dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [cwd] }) }, cwd)
   await page.setViewportSize({ width: 1440, height: 950 })
-  await page.getByRole('button', { name: '저장소 열기', exact: true }).first().click()
+  await page.getByRole('button', { name: '저장소 추가', exact: true }).click(); await page.getByRole('menuitem', { name: '저장소 열기', exact: true }).click()
   await page.getByRole('button', { name: /^audit-fixes main/ }).waitFor()
   await page.locator('.bl-repository:visible .bl-graph-row').first().waitFor()
   const workspace = page.locator('.bl-repository:visible')
@@ -23,8 +23,8 @@ export async function checkAuditFixes(app, page, root, accessibility) {
   await page.getByRole('dialog').waitFor({ state: 'hidden' })
   assert.equal(await workspace.getByRole('complementary', { name: '커밋 상세', exact: true }).isVisible(), true)
   await workspace.getByRole('button', { name: '커밋 상세 닫기', exact: true }).click()
-  await workspace.getByText('커밋 검색·필터', { exact: true }).click()
-  await workspace.getByLabel('커밋 메시지 검색').fill('absent-message')
+  await workspace.getByRole('button', { name: '커밋 필터', exact: true }).click()
+  await workspace.getByLabel('커밋 검색').fill('absent-message')
   const empty = page.getByText('일치하는 커밋이 없습니다', { exact: true }); await empty.waitFor()
   for (const size of [{ width: 1440, height: 950 }, { width: 760, height: 580 }]) {
     await page.setViewportSize(size)
@@ -37,8 +37,8 @@ export async function checkAuditFixes(app, page, root, accessibility) {
   await workspace.getByRole('combobox', { name: '가져올 브랜치', exact: true }).selectOption('refs/heads/topic')
   await workspace.getByRole('combobox', { name: '반영할 브랜치', exact: true }).selectOption('refs/heads/main')
   await workspace.getByRole('region', { name: '가져올 브랜치 그래프', exact: true }).getByText('이쪽에만 1개', { exact: true }).waitFor()
-  for (const [button, title, submit] of [['topic → main Merge', 'Merge 검토', 'Merge 실행'], ['현재 브랜치를 topic 위로 Rebase', 'Rebase 검토', 'Rebase 실행']]) {
-    await workspace.getByRole('button', { name: button, exact: true }).click()
+  for (const [button, title, submit] of [['현재 브랜치에 Merge…', 'Merge 검토', 'Merge 실행'], ['현재 브랜치를 Rebase…', 'Rebase 검토', 'Rebase 실행']]) {
+    await workspace.getByRole('button', { name: button, exact: true }).press('Enter')
     const review = page.getByRole('dialog', { name: title, exact: true })
     await review.getByRole('button', { name: submit, exact: true }).click(); await review.waitFor({ state: 'hidden' })
     await workspace.getByRole('heading', { name: '충돌 해결', exact: true }).waitFor()
@@ -58,7 +58,7 @@ export async function checkAuditFixes(app, page, root, accessibility) {
   await page.getByRole('button', { name: 'Worktree 관리', exact: true }).click()
   await workspace.getByRole('button', { name: 'Worktree 만들기', exact: true }).click()
   await page.getByRole('combobox', { name: 'Worktree 생성 방식', exact: true }).selectOption('existing')
-  assert.equal(await page.getByRole('dialog').getByLabel('새 브랜치 이름').count(), 0)
+  assert.equal(await page.getByRole('dialog').getByLabel('새 브랜치 이름', { exact: true }).count(), 0)
   await page.getByRole('combobox', { name: 'Worktree 브랜치', exact: true }).selectOption('refs/heads/topic')
   const target = path.join(root, 'existing-ui')
   await app.evaluate(({ dialog }, target) => { dialog.showSaveDialog = async () => ({ canceled: false, filePath: target }) }, target)

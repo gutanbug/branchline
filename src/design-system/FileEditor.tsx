@@ -13,7 +13,7 @@ export function FileEditor({ filename, value, onChange, readOnly = false, dirty,
     if (!state) return <Notice compact>폴더를 읽고 있습니다…</Notice>
     if (state.error) return <Notice tone="error" compact>{state.error}<Button onClick={() => onFolder(path, true)}>다시 읽기</Button></Notice>
     return state.entries?.length ? <ul>{state.entries.map(entry => <li key={entry.path}>{entry.directory
-      ? <Disclosure title={entry.name} open={expanded.includes(entry.path)} onOpenChange={open => onFolder(entry.path, open)}>{expanded.includes(entry.path) && folder(entry.path)}</Disclosure>
+      ? <Disclosure variant="tree" title={entry.name} open={expanded.includes(entry.path)} onOpenChange={open => onFolder(entry.path, open)}>{expanded.includes(entry.path) && folder(entry.path)}</Disclosure>
       : <Button variant="ghost" disabled={busy || entry.disabled} title={entry.disabled ? `${entry.path} · 일반 파일만 편집 가능` : entry.path} aria-label={`${entry.path} 파일 열기`} aria-pressed={filename === entry.path} onClick={() => onFile(entry.path)}><span aria-hidden="true">▤</span><span>{entry.name}</span></Button>}</li>)}</ul> : <p className="bl-muted">빈 폴더입니다.</p>
   }
   return <div className="bl-file-editor">

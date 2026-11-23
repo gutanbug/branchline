@@ -1,3 +1,5 @@
+export const fileViewModes = [['list', '목록'], ['tree', '트리']] as const
+
 export type DiffLine = { kind: 'context' | 'add' | 'del'; text: string; old?: number; next?: number; noNewline?: boolean }
 export type DiffHunk = { header: string; lines: DiffLine[] }
 export type DiffFile = { path: string; metadata: string[]; raw: string[]; hunks: DiffHunk[]; added: number; deleted: number; unsupported: boolean }

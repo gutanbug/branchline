@@ -17,7 +17,7 @@ export function FilePathList({ paths, view, renderFile }: { paths: string[]; vie
     return root
   }, [paths])
   function folders(folder: typeof tree, parent = ''): ReactNode {
-    return <ul>{[...folder.folders].sort(([a], [b]) => a.localeCompare(b)).map(([name, child]) => <li key={`${parent}/${name}`} className="bl-diff-folder"><Disclosure title={name} initiallyOpen><div className="bl-diff-folder-children">{folders(child, `${parent}/${name}`)}</div></Disclosure></li>)}{folder.files.map(index => <li key={paths[index]}>{renderFile(index)}</li>)}</ul>
+    return <ul>{[...folder.folders].sort(([a], [b]) => a.localeCompare(b)).map(([name, child]) => <li key={`${parent}/${name}`} className="bl-diff-folder"><Disclosure variant="tree" title={name} initiallyOpen><div className="bl-diff-folder-children">{folders(child, `${parent}/${name}`)}</div></Disclosure></li>)}{folder.files.map(index => <li key={paths[index]}>{renderFile(index)}</li>)}</ul>
   }
   return <div className="bl-file-path-list">{view === 'tree' ? folders(tree) : <ul>{paths.map((path, index) => <li key={path}>{renderFile(index)}</li>)}</ul>}</div>
 }

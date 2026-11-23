@@ -35,12 +35,14 @@ export const IntegratedDiffToolbar: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getAllByText('src/긴디렉터리/변경파일.ts')).toHaveLength(1)
     await userEvent.click(canvas.getByRole('checkbox', { name: '줄바꿈' }))
+    await userEvent.click(canvas.getByRole('button', { name: '좌우 비교' }))
     await userEvent.click(canvas.getByRole('button', { name: 'src/긴디렉터리/변경파일.ts 크게 보기' }))
     await expect(canvas.getByRole('dialog', { name: '파일 변경 크게 보기' })).toBeVisible()
+    await expect(canvas.getByRole('button', { name: '좌우 비교' })).toHaveAttribute('aria-pressed', 'true')
     await expect(canvas.getByRole('checkbox', { name: '줄바꿈' })).toBeChecked()
     await userEvent.click(within(canvas.getByRole('dialog')).getByRole('button', { name: '닫기' }))
     await waitFor(() => expect(canvas.queryByRole('dialog')).not.toBeInTheDocument())
-    await expect(canvas.getByRole('button', { name: 'src/긴디렉터리/변경파일.ts 크게 보기' })).toHaveFocus()
+    await waitFor(() => expect(canvas.getByRole('button', { name: 'src/긴디렉터리/변경파일.ts 크게 보기' })).toHaveFocus())
     await expect(canvas.getByRole('checkbox', { name: '줄바꿈' })).toBeChecked()
   },
 }

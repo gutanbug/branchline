@@ -68,7 +68,13 @@ test('divergence, changed destination, multiple push URLs, and conflict do not s
   await commit(clone, 'other.txt', 'other', 'other'); await change(clone, { action: 'push', ...remoteBranch });
   await commit(repo, 'local.txt', 'local', 'local');
   const head = (await git.state(repo)).head, remoteHead = (await git.git(remote, ['rev-parse', 'main'])).trim();
-  await assert.rejects(change(repo, { action: 'push', ...remoteBranch }), /실패/);
+  await assert.rejects(change(repo, { action: 'push', ...remoteBranch }), error => {
+    assert.equal(error.pushRecovery.ahead, 1);
+    assert.equal(error.pushRecovery.behind, 1);
+    assert.equal(error.pushRecovery.repository.head, head);
+    assert.match(error.message, /origin\/main Push가 거절/);
+    return true;
+  });
   await assert.rejects(change(repo, { action: 'pull', ...remoteBranch }), /fast-forward/);
   assert.equal((await git.state(repo)).head, head); assert.equal((await git.git(remote, ['rev-parse', 'main'])).trim(), remoteHead);
   const expected = (await git.state(repo)).token;
@@ -182,13 +188,104 @@ test('Pull automatically preserves staged, working and untracked changes with gu
     assert.equal(await git.git(repo, ['show', ':base.txt']), 'staged\n'); assert.equal(await fs.readFile(path.join(repo, 'base.txt'), 'utf8'), 'staged\nworking\n');
     assert.deepEqual(await fs.readFile(path.join(repo, '한글.bin')), bytes); assert.equal(await git.git(repo, ['stash', 'list', '--format=%H']), previous);
   });
-  await t.test('divergence restores original work and retains recoverable stash', async t => {
+  await t.test('up-to-date, locally ahead, missing branch and offline Pull never stash edits', async t => {
+    const { repo, root } = await pair(t);
+    await fs.writeFile(path.join(repo, 'previous.txt'), 'keep');
+    await change(repo, { action: 'stash-save', message: 'previous', includeUntracked: true });
+    const previous = await git.git(repo, ['stash', 'list', '--format=%H']);
+    for (const ahead of [false, true]) {
+      if (ahead) await commit(repo, 'ahead.txt', 'local commit', 'ahead');
+      await fs.writeFile(path.join(repo, 'base.txt'), 'staged'); await git.git(repo, ['add', 'base.txt']);
+      await fs.writeFile(path.join(repo, 'base.txt'), 'staged and working');
+      await fs.writeFile(path.join(repo, 'draft.txt'), 'new file');
+      const before = (await git.state(repo)).localToken;
+      await change(repo, { action: 'pull', ...remoteBranch });
+      assert.equal((await git.state(repo)).localToken, before);
+      assert.equal(await git.git(repo, ['stash', 'list', '--format=%H']), previous);
+    }
+    const before = (await git.state(repo)).localToken;
+    await assert.rejects(change(repo, { action: 'pull', remote: 'origin', branch: 'missing' }));
+    assert.equal((await git.state(repo)).localToken, before);
+    await git.git(repo, ['remote', 'set-url', 'origin', path.join(root, 'offline.git')]);
+    await assert.rejects(change(repo, { action: 'pull', ...remoteBranch }));
+    assert.equal((await git.state(repo)).localToken, before);
+    assert.equal(await git.git(repo, ['stash', 'list', '--format=%H']), previous);
+  });
+  await t.test('overlapping file uses temporary stash and restores staged and working hunks separately', async t => {
+    const { repo, other } = await pair(t);
+    const lines = Array.from({ length: 40 }, (_, i) => `line ${i}\n`);
+    await commit(other, 'long.txt', lines.join(''), 'long file'); await change(other, { action: 'push', ...remoteBranch });
+    await change(repo, { action: 'pull', ...remoteBranch });
+    const staged = [...lines]; staged[2] = 'staged edit\n';
+    await fs.writeFile(path.join(repo, 'long.txt'), staged.join('')); await git.git(repo, ['add', 'long.txt']);
+    const working = [...staged]; working[12] = 'working edit\n'; await fs.writeFile(path.join(repo, 'long.txt'), working.join(''));
+    const incoming = [...lines]; incoming[35] = 'remote edit\n';
+    await commit(other, 'long.txt', incoming.join(''), 'remote hunk'); await change(other, { action: 'push', ...remoteBranch });
+    await change(repo, { action: 'pull', ...remoteBranch });
+    staged[35] = working[35] = incoming[35];
+    assert.equal(await git.git(repo, ['show', ':long.txt']), staged.join(''));
+    assert.equal(await fs.readFile(path.join(repo, 'long.txt'), 'utf8'), working.join(''));
+    assert.equal(await git.git(repo, ['stash', 'list']), '');
+  });
+  await t.test('nested repositories survive Pull before staging, after gitlink staging, and after a retained stash', async t => {
+    const { repo, other, root } = await pair(t);
+    const relative = 'config/id:한글/telegraf', nested = path.join(repo, relative);
+    await fs.mkdir(nested, { recursive: true }); await git.git(nested, ['init', '-b', 'main']); await identity(nested);
+    await commit(nested, 'inner.txt', 'base\n', 'inner');
+    await fs.writeFile(path.join(nested, 'inner.txt'), 'staged\n'); await git.git(nested, ['add', '.']);
+    await fs.writeFile(path.join(nested, 'inner.txt'), 'staged\nworking\n'); await fs.writeFile(path.join(nested, 'draft.txt'), 'inner draft');
+    const before = (await git.state(nested)).localToken;
+    await git.git(repo, ['config', 'submodule.recurse', 'true']);
+    await fs.writeFile(path.join(repo, 'previous.txt'), 'previous backup');
+    await change(repo, { action: 'stash-save', message: 'retained backup', includeUntracked: true });
+    const previous = await git.git(repo, ['stash', 'list', '--format=%H']);
+    const hooks = path.join(root, 'hooks'); await fs.mkdir(hooks);
+    await fs.writeFile(path.join(hooks, 'post-merge'), '#!/bin/sh\ngit rev-parse refs/stash >> "' + path.join(root, 'snapshots') + '"\n', { mode: 0o755 });
+    await git.git(repo, ['config', 'core.hooksPath', hooks]);
+    for (const mode of ['untracked', 'staged gitlink', 'gitlink only', 'nested only']) {
+      if (mode === 'staged gitlink') await git.git(repo, ['add', '--', relative]);
+      if (mode === 'gitlink only') {
+        await fs.writeFile(path.join(repo, 'base.txt'), 'initial\n'); await git.git(repo, ['add', 'base.txt']);
+        await fs.unlink(path.join(repo, 'new.txt'));
+      }
+      if (mode === 'nested only') await git.git(repo, ['restore', '--staged', '--source=HEAD', '--', relative]);
+      if (mode === 'untracked' || mode === 'staged gitlink') {
+        await fs.writeFile(path.join(repo, 'base.txt'), 'staged parent\n'); await git.git(repo, ['add', 'base.txt']);
+        await fs.writeFile(path.join(repo, 'base.txt'), 'staged parent\nworking parent\n');
+        await fs.writeFile(path.join(repo, 'new.txt'), 'parent draft');
+      }
+      await commit(other, 'incoming.txt', mode, mode); await change(other, { action: 'push', ...remoteBranch });
+      await change(repo, { action: 'pull', ...remoteBranch });
+      assert.equal((await git.state(repo)).head, (await git.state(other)).head, mode);
+      assert.equal((await git.state(nested)).localToken, before, mode);
+      assert.equal(await git.git(repo, ['stash', 'list', '--format=%H']), previous, mode);
+      const observed = (await fs.readFile(path.join(root, 'snapshots'), 'utf8')).trim().split('\n').at(-1);
+      assert.equal(observed, previous.trim(), 'non-overlapping parent edits require no temporary stash');
+      if (mode === 'untracked' || mode === 'staged gitlink') {
+        assert.equal(await git.git(repo, ['show', ':base.txt']), 'staged parent\n');
+        assert.equal(await fs.readFile(path.join(repo, 'base.txt'), 'utf8'), 'staged parent\nworking parent\n');
+        assert.equal(await fs.readFile(path.join(repo, 'new.txt'), 'utf8'), 'parent draft');
+      }
+      if (mode === 'staged gitlink' || mode === 'gitlink only') assert.match(await git.git(repo, ['ls-files', '--stage', '--', relative]), /^160000/);
+    }
+    const head = (await git.state(repo)).head;
+    await fs.writeFile(path.join(repo, 'base.txt'), 'backup before collision');
+    await fs.mkdir(path.join(other, relative), { recursive: true });
+    await commit(other, `${relative}/inner.txt`, 'remote collision', 'nested collision');
+    await change(other, { action: 'push', ...remoteBranch });
+    await assert.rejects(change(repo, { action: 'pull', ...remoteBranch }), /보존/);
+    assert.equal((await git.state(repo)).head, head);
+    assert.equal((await git.state(nested)).localToken, before);
+    assert.equal(await fs.readFile(path.join(repo, 'base.txt'), 'utf8'), 'backup before collision');
+    assert.equal(await git.git(repo, ['show', 'stash@{0}:base.txt']), 'backup before collision');
+  });
+  await t.test('divergence is detected before stashing and leaves original work untouched', async t => {
     const { repo, other } = await pair(t);
     await commit(repo, 'local.txt', 'local', 'local'); await commit(other, 'remote.txt', 'remote', 'remote'); await change(other, { action: 'push', ...remoteBranch });
     const head = (await git.state(repo)).head;
     await fs.writeFile(path.join(repo, 'base.txt'), 'keep staged'); await git.git(repo, ['add', 'base.txt']);
-    await assert.rejects(change(repo, { action: 'pull', ...remoteBranch }), /보존.*\n.*fast-forward/);
-    assert.equal((await git.state(repo)).head, head); assert.equal(await git.git(repo, ['show', ':base.txt']), 'keep staged'); assert.equal(await git.git(repo, ['show', 'stash@{0}:base.txt']), 'keep staged');
+    await assert.rejects(change(repo, { action: 'pull', ...remoteBranch }), /fast-forward/);
+    assert.equal((await git.state(repo)).head, head); assert.equal(await git.git(repo, ['show', ':base.txt']), 'keep staged'); assert.equal(await git.git(repo, ['stash', 'list']), '');
   });
   await t.test('apply conflict keeps pulled HEAD and stash; another Pull is blocked', async t => {
     const { repo, other } = await pair(t);
@@ -212,7 +309,7 @@ test('Pull automatically preserves staged, working and untracked changes with gu
     })), /보존/);
     assert.equal(await fs.readFile(path.join(repo, 'base.txt'), 'utf8'), 'external writer'); assert.equal(await git.git(repo, ['show', 'stash@{0}:base.txt']), 'keep original');
   });
-  await t.test('cancelled transport restores the index and work and retains stash', async t => {
+  await t.test('cancelled transport never stashes or modifies the index and work', async t => {
     const { repo, root } = await pair(t);
     await fs.writeFile(path.join(repo, 'base.txt'), 'cancelled staged'); await git.git(repo, ['add', 'base.txt']);
     const ssh = path.join(root, 'blocking-ssh'), marker = path.join(root, 'started');
@@ -220,8 +317,163 @@ test('Pull automatically preserves staged, working and untracked changes with gu
     await git.git(repo, ['config', 'core.sshCommand', ssh]); await git.git(repo, ['remote', 'set-url', 'origin', 'ssh://git@example.invalid/repo']);
     const controller = new AbortController(), expected = (await git.state(repo)).token;
     const timer = setInterval(() => { fs.access(marker).then(() => controller.abort()).catch(() => {}) }, 20);
-    try { await assert.rejects(sync.change(repo, { action: 'pull', expected, ...remoteBranch }, controller.signal), /보존.*\n.*취소/); }
+    try { await assert.rejects(sync.change(repo, { action: 'pull', expected, ...remoteBranch }, controller.signal), /취소/); }
     finally { clearInterval(timer) }
-    assert.equal(await git.git(repo, ['show', ':base.txt']), 'cancelled staged'); assert.equal(await fs.readFile(path.join(repo, 'base.txt'), 'utf8'), 'cancelled staged'); assert.equal((await sync.snapshot(repo)).stashes.length, 1);
+    assert.equal(await git.git(repo, ['show', ':base.txt']), 'cancelled staged'); assert.equal(await fs.readFile(path.join(repo, 'base.txt'), 'utf8'), 'cancelled staged'); assert.equal((await sync.snapshot(repo)).stashes.length, 0);
   });
+});
+
+test('Pull another local branch without checkout preserves worktree and refuses unsafe ref updates', async t => {
+  const { root, repo, remote } = await setup(t);
+  await change(repo, { action: 'push', ...remoteBranch });
+  await change(repo, { action: 'fetch', remote: 'origin' });
+  await git.git(repo, ['branch', 'release/local', '--track', 'origin/main']);
+  const other = path.join(root, 'publisher'); await sync.clone(remote, other); await identity(other);
+  await commit(other, 'incoming.txt', 'incoming\n', 'incoming'); await change(other, { action: 'push', ...remoteBranch });
+  const incoming = (await git.state(other)).head;
+  await fs.writeFile(path.join(repo, 'base.txt'), 'saved stash\n');
+  await change(repo, { action: 'stash-save', message: 'existing stash' });
+  const stash = (await sync.snapshot(repo)).stashes[0].sha;
+  await fs.writeFile(path.join(repo, 'base.txt'), 'staged\n'); await git.git(repo, ['add', 'base.txt']);
+  await fs.writeFile(path.join(repo, 'base.txt'), 'working\n'); await fs.writeFile(path.join(repo, 'draft.txt'), 'untracked\n');
+  const before = await git.state(repo), input = { action: 'pull', ...remoteBranch, localBranch: 'release/local' };
+  await change(repo, { action: 'fetch', remote: 'origin' });
+  assert.equal((await git.state(repo)).localToken, before.localToken);
+  assert.equal((await sync.snapshot(repo)).stashes[0].sha, stash);
+  const fetchHead = await fs.readFile(path.join(repo, '.git', 'FETCH_HEAD'), 'utf8');
+  await change(repo, input);
+  assert.equal(await fs.readFile(path.join(repo, '.git', 'FETCH_HEAD'), 'utf8'), fetchHead);
+  assert.equal((await git.git(repo, ['rev-parse', 'release/local'])).trim(), incoming);
+  assert.equal((await git.state(repo)).localToken, before.localToken);
+  assert.equal(await git.git(repo, ['show', ':base.txt']), 'staged\n');
+  assert.equal(await fs.readFile(path.join(repo, 'base.txt'), 'utf8'), 'working\n');
+  assert.equal(await fs.readFile(path.join(repo, 'draft.txt'), 'utf8'), 'untracked\n');
+  assert.equal((await sync.snapshot(repo)).stashes[0].sha, stash);
+  await change(repo, input); // already up to date
+  await assert.rejects(change(repo, { ...input, expected: before.token }), /바뀌/);
+  for (const localBranch of ['missing', '', '-unsafe', 'main\nrefs/heads/other', 'refs/heads/main']) await assert.rejects(change(repo, { ...input, localBranch }));
+  const wt = path.join(root, 'release-worktree');
+  await git.git(repo, ['worktree', 'add', wt, 'release/local']);
+  await commit(other, 'incoming.txt', 'next\n', 'next'); await change(other, { action: 'push', ...remoteBranch });
+  await assert.rejects(change(repo, input), /Worktree에서 사용 중/);
+  assert.equal((await git.state(wt)).head, incoming);
+  // Native Git also refuses updating checked-out refs if the app's earlier check becomes stale.
+  await assert.rejects(sync.network(repo, ['fetch', '--atomic', '--', remote, 'refs/heads/main:refs/heads/release/local']), /실패/);
+  await git.git(wt, ['switch', '--detach']);
+  await change(repo, input);
+  const updated = (await git.git(repo, ['rev-parse', 'release/local'])).trim();
+  const divergent = (await git.git(repo, ['commit-tree', `${incoming}^{tree}`, '-p', incoming, '-m', 'local-only'])).trim();
+  await git.git(repo, ['update-ref', 'refs/heads/release/local', divergent, updated]);
+  await assert.rejects(change(repo, input), /분기 여부/);
+  assert.equal((await git.git(repo, ['rev-parse', 'release/local'])).trim(), divergent);
+  assert.equal((await git.state(repo)).localToken, before.localToken);
+  await git.git(repo, ['update-ref', 'refs/heads/release/local', updated, divergent]);
+  await git.git(remote, ['update-ref', '-d', 'refs/heads/main']);
+  await assert.rejects(change(repo, input), /Pull을 완료하지 못했습니다/);
+  assert.equal((await git.git(repo, ['rev-parse', 'release/local'])).trim(), updated);
+  assert.equal((await git.state(repo)).localToken, before.localToken);
+});
+
+test('sidebar Stash identifies the selected reflog entry even when two messages share a SHA', async t => {
+  const { repo } = await setup(t);
+  await fs.writeFile(path.join(repo, 'base.txt'), 'stash payload');
+  await git.git(repo, ['stash', 'push', '-m', 'first']);
+  const first = (await sync.snapshot(repo)).stashes[0];
+  // store skips an identical tip; an intervening entry makes both records visible.
+  await fs.writeFile(path.join(repo, 'base.txt'), 'intervening payload');
+  await git.git(repo, ['stash', 'push', '-m', 'middle']);
+  await git.git(repo, ['stash', 'store', '-m', 'second', first.sha]);
+  const list = (await sync.snapshot(repo)).stashes;
+  assert.equal(list[2].sha, list[0].sha);
+  await assert.rejects(change(repo, { action: 'stash-drop', stashRef: list[0].ref, stashSha: first.sha, stashMessage: first.message }), /순서/);
+  await change(repo, { action: 'stash-drop', stashRef: list[2].ref, stashSha: first.sha, stashMessage: first.message });
+  assert.deepEqual((await sync.snapshot(repo)).stashes.map(s => s.message), list.slice(0, 2).map(s => s.message));
+});
+
+test('disjoint Stash Pop restores the saved index and keeps existing staged, unstaged and untracked files', async t => {
+  const { repo } = await setup(t);
+  await commit(repo, 'other.txt', 'original\n', 'other');
+  await fs.writeFile(path.join(repo, 'base.txt'), 'stash index\n');
+  await git.git(repo, ['add', 'base.txt']);
+  await fs.writeFile(path.join(repo, 'base.txt'), 'stash working\n');
+  await fs.mkdir(path.join(repo, 'saved'));
+  await fs.writeFile(path.join(repo, 'saved', 'new.txt'), 'from stash');
+  await git.git(repo, ['stash', 'push', '-u', '-m', 'disjoint']);
+  const stash = (await sync.snapshot(repo)).stashes[0];
+  const input = { action: 'stash-pop', restoreIndex: true, stashRef: stash.ref, stashSha: stash.sha, stashMessage: stash.message };
+  await fs.writeFile(path.join(repo, 'other.txt'), 'existing index\n');
+  await git.git(repo, ['add', 'other.txt']);
+  await fs.writeFile(path.join(repo, 'other.txt'), 'existing work\n');
+  await fs.writeFile(path.join(repo, 'saved'), 'overlapping file');
+  await assert.rejects(change(repo, input), /경로가 겹칩니다: saved/);
+  assert.equal((await sync.snapshot(repo)).stashes[0].sha, stash.sha);
+  await fs.rename(path.join(repo, 'saved'), path.join(repo, 'untracked.txt'));
+  await change(repo, input);
+  assert.equal(await git.git(repo, ['show', ':other.txt']), 'existing index\n');
+  assert.equal(await fs.readFile(path.join(repo, 'other.txt'), 'utf8'), 'existing work\n');
+  assert.equal(await git.git(repo, ['show', ':base.txt']), 'stash index\n');
+  assert.equal(await fs.readFile(path.join(repo, 'base.txt'), 'utf8'), 'stash working\n');
+  assert.equal(await fs.readFile(path.join(repo, 'untracked.txt'), 'utf8'), 'overlapping file');
+  assert.equal(await fs.readFile(path.join(repo, 'saved/new.txt'), 'utf8'), 'from stash');
+  assert.equal((await sync.snapshot(repo)).stashes.length, 0);
+});
+
+test('sidebar Fetch refreshes one remote ref and toolbar Fetch refreshes the remaining refs', async t => {
+  const { repo, remote } = await setup(t);
+  await git.git(repo, ['push', remote, 'HEAD:refs/heads/first', 'HEAD:refs/heads/second']);
+  await change(repo, { action: 'fetch', remote: 'origin', branch: 'first', fetchBranchOnly: true });
+  assert.deepEqual((await git.state(repo)).refs.filter(ref => ref.remote).map(ref => ref.name), ['origin/first']);
+  await change(repo, { action: 'fetch', remote: 'origin', branch: 'first' });
+  assert.deepEqual((await git.state(repo)).refs.filter(ref => ref.remote).map(ref => ref.name), ['origin/first', 'origin/second']);
+});
+
+test('Push keeps the fetch remote intact when the publish URL is different', async t => {
+  const { root, repo, remote } = await setup(t);
+  await change(repo, { action: 'push', ...remoteBranch, publishAndTrack: true });
+  const before = (await sync.snapshot(repo)).upstream;
+  assert.equal(before.ref, 'refs/remotes/origin/main');
+  assert.equal(before.ahead, 0);
+  const publish = path.join(root, 'publish-only.git');
+  await git.git(root, ['clone', '--bare', remote, publish]);
+  await git.git(repo, ['remote', 'set-url', '--push', 'origin', publish]);
+  await commit(repo, 'publish.txt', 'update', 'publish separately');
+  await change(repo, { action: 'push', ...remoteBranch });
+  const { repository, upstream } = await sync.snapshot(repo);
+  assert.equal((await git.git(publish, ['rev-parse', 'main'])).trim(), repository.head);
+  assert.equal((await git.git(repo, ['rev-parse', '@{upstream}'])).trim(), (await git.git(remote, ['rev-parse', 'main'])).trim());
+  assert.equal(upstream.ahead, 1);
+});
+
+test('a server-side Push policy rejection does not offer history recovery or expose hook output', async t => {
+  const { repo, remote } = await setup(t);
+  await change(repo, { action: 'push', ...remoteBranch });
+  const initial = (await git.state(repo)).head;
+  await fs.writeFile(path.join(remote, 'hooks', 'pre-receive'), '#!/bin/sh\necho internal-hook-detail >&2\nexit 1\n', { mode: 0o755 });
+  await commit(repo, 'review.txt', 'review', 'needs review');
+  await assert.rejects(change(repo, { action: 'push', ...remoteBranch }), error => {
+    assert.match(error.message, /원격 서버가 Push를 거절/);
+    assert.doesNotMatch(error.message, /internal-hook-detail/);
+    assert.equal(error.pushRecovery, undefined);
+    return true;
+  });
+  assert.equal((await git.git(remote, ['rev-parse', 'main'])).trim(), initial);
+});
+
+test('a rejected Push to a separate publish URL never compares or fetches the other endpoint', async t => {
+  const { root, repo, remote } = await setup(t);
+  await change(repo, { action: 'push', ...remoteBranch, publishAndTrack: true });
+  const initial = (await git.state(repo)).head, publish = path.join(root, 'publish.git');
+  await git.git(root, ['clone', '--bare', remote, publish]);
+  await git.git(repo, ['remote', 'set-url', '--push', 'origin', publish]);
+  await identity(publish);
+  const server = (await git.git(publish, ['commit-tree', 'main^{tree}', '-p', initial, '-m', 'published elsewhere'])).trim();
+  await git.git(publish, ['update-ref', 'refs/heads/main', server, initial]);
+  await commit(repo, 'local.txt', 'local', 'local only');
+  await assert.rejects(change(repo, { action: 'push', ...remoteBranch }), error => {
+    assert.match(error.message, /Fetch와 Push 주소가 다릅니다/);
+    assert.equal(error.pushRecovery, undefined);
+    return true;
+  });
+  assert.equal((await git.git(repo, ['rev-parse', 'origin/main'])).trim(), initial);
+  assert.equal((await git.git(publish, ['rev-parse', 'main'])).trim(), server);
 });

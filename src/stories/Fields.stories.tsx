@@ -9,3 +9,13 @@ export const Error: Story = { args: { defaultValue: 'feature/new work', error: '
 export const Disabled: Story = { args: { disabled: true, defaultValue: 'main' } }
 export const ReadOnly: Story = { args: { readOnly: true, defaultValue: 'main', hint: '기준 브랜치는 변경할 수 없습니다.' } }
 export const Search: Story = { args: { type: 'search', label: '커밋 검색', placeholder: '메시지, 해시, 작성자, 파일', hint: undefined } }
+
+export const HelpOnDemand: Story = { play: async ({ canvasElement }) => {
+  const canvas = within(canvasElement), body = within(canvasElement.ownerDocument.body)
+  const input = canvas.getByRole('textbox', { name: '브랜치 이름' })
+  await expect(input).toHaveAccessibleDescription('기준 브랜치에서 새 작업을 시작합니다.')
+  await expect(canvasElement.querySelector('.field > small')).toBeNull()
+  canvas.getByRole('button', { name: '브랜치 이름 도움말' }).focus()
+  await expect(await body.findByRole('tooltip')).toHaveTextContent('기준 브랜치에서 새 작업을 시작합니다.')
+  await userEvent.keyboard('{Escape}')
+} }

@@ -1,8 +1,9 @@
+import { ModeSelector } from './ModeSelector'
 import { useMemo, useState } from 'react'
 import { Badge, Button, EmptyState } from './components'
 import { CommitMetadata } from './CommitMessage'
 import { FilePathList } from './FilePathList'
-import { parseDiff } from './diff-model'
+import { fileViewModes, parseDiff } from './diff-model'
 
 export type DiffFileSelection = { id: string; path: string; value: string }
 export function DiffFileList({ value, selected, onOpen }: { value: string; selected?: string; onOpen: (file: DiffFileSelection) => void }) {
@@ -16,7 +17,7 @@ export function DiffFileList({ value, selected, onOpen }: { value: string; selec
   }
   return <section className="bl-diff-file-list" aria-label="변경 파일 목록">
     {parsed.preamble && <CommitMetadata value={parsed.preamble} />}
-    <div className="bl-row-between"><strong>변경 파일 {parsed.files.length}개</strong><div className="bl-actions" role="group" aria-label="변경 파일 표시 방식"><Button variant={view === 'list' ? 'primary' : 'secondary'} aria-pressed={view === 'list'} onClick={() => setView('list')}>목록</Button><Button variant={view === 'tree' ? 'primary' : 'secondary'} aria-pressed={view === 'tree'} onClick={() => setView('tree')}>트리</Button></div></div>
+    <div className="bl-row-between"><strong>변경 파일 {parsed.files.length}개</strong><ModeSelector label="변경 파일 표시 방식" options={fileViewModes} value={view} onChange={setView} /></div>
     {/^Merge:/m.test(parsed.preamble) && <small>Merge 커밋은 첫 번째 부모와 비교합니다.</small>}
     {parsed.files.length ? <FilePathList paths={parsed.files.map(file => file.path)} view={view} renderFile={index => fileRow(index, view === 'tree')} /> : <EmptyState title="변경 파일이 없습니다">이 커밋에는 표시할 파일 변경이 없습니다.</EmptyState>}
   </section>

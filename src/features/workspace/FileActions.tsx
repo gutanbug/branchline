@@ -31,14 +31,13 @@ export function FileActions({ ref, api, repo, onRepo, onBusy, onNavigate, onFeed
   useImperativeHandle(ref, () => ({ open(action, file, staged) {
     if (inFlight.current) return
     const next = { action, file, staged, expected: repo.token }; setRequest(next); setError(''); setValue(null)
-    if (labels[action]) { modal.current?.showModal(); cancel.current?.focus(); if (action === 'blame') void execute(next) } else void execute(next)
+    if (['discard', 'trash', 'blame'].includes(action)) { modal.current?.showModal(); cancel.current?.focus(); if (action === 'blame') void execute(next) } else void execute(next)
   } }))
   const action = request?.action
-  const description = action === 'discard' ? '이 파일의 스테이징되지 않은 변경을 버리고 인덱스 내용으로 복원합니다. 버린 변경은 되돌릴 수 없습니다.' : action === 'trash' ? '작업 파일을 운영체제 휴지통으로 이동합니다. 삭제를 커밋하려면 내 변경 사항에서 별도로 스테이징하세요.' : action === 'stash-file' ? '이 파일의 작업·스테이징 변경을 함께 보관하고 작업 폴더에서 치웁니다. 다른 파일의 변경은 유지합니다.' : action === 'blame' ? '현재 HEAD에 커밋된 각 행의 SHA·작성자·날짜입니다. 아직 커밋하지 않은 변경은 포함하지 않습니다.' : '저장소 루트 .gitignore에 규칙을 추가합니다. 이미 추적 중인 파일은 제외되지 않습니다. 되돌리려면 .gitignore에서 이 규칙을 삭제하세요.'
+  const description = action === 'discard' ? '스테이징되지 않은 변경을 버립니다. 되돌릴 수 없습니다.' : '이 파일을 휴지통으로 이동합니다.'
+
   return <Dialog dialogRef={modal} title={labels[action!] || '파일 작업'} busy={busy} size={action === 'blame' ? 'wide' : undefined}>
-    <p className="bl-path">{request?.file.path}</p><p>{description}</p>
-    {action === 'ignore-extension' && <Notice>저장소 전체에서 <code>{request?.file.path.split('/').at(-1)?.slice(request.file.path.split('/').at(-1)!.lastIndexOf('.'))}</code> 확장자의 미추적 파일을 제외합니다.</Notice>}
-    {action === 'ignore-folder' && <Notice><code>{request?.file.path.slice(0, request.file.path.lastIndexOf('/'))}/</code> 아래의 미추적 파일을 모두 제외합니다.</Notice>}
+    <p className="bl-path">{request?.file.path}</p>{action !== 'blame' && <p>{description}</p>}
     {action === 'blame' && (busy ? <Notice>행별 작성자를 읽고 있습니다…</Notice> : value !== null ? <CodeDiff value={value} filename={request?.file.path} format="code" /> : null)}
     {error && <Notice tone="error">{error}</Notice>}
     <div className="bl-actions bl-dialog-actions"><Button ref={cancel} disabled={busy} onClick={() => modal.current?.close()}>{action === 'blame' ? '닫기' : '취소'}</Button>{action === 'blame' ? error && <Button disabled={busy} onClick={() => request && void execute({ ...request, expected: repo.token })}>다시 조회</Button> : <Button variant="primary" loading={busy} disabled={busy || request?.expected !== repo.token} onClick={() => request && void execute(request)}>{labels[action!] || '실행'}</Button>}</div>

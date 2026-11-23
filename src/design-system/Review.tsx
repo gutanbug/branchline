@@ -1,8 +1,8 @@
-import type { MouseEventHandler, ReactNode } from 'react'
+import type { ComponentProps, MouseEventHandler, ReactNode } from 'react'
 import { Badge, Button } from './components'
 
-export function ReviewListRow({ title, identifier, author, source, target, status, draft, updated, onClick }: { title: string; identifier: string; author: string; source?: string; target?: string; status: string; draft?: boolean; updated: string; onClick: MouseEventHandler<HTMLButtonElement> }) {
-  return <Button variant="ghost" className="bl-review-list-row" onClick={onClick} aria-label={`${identifier} ${title}`}>
+export function ReviewListRow({ title, identifier, author, source, target, status, draft, updated, onClick, ...button }: ComponentProps<typeof Button> & { title: string; identifier: string; author: string; source?: string; target?: string; status: string; draft?: boolean; updated: string; onClick: MouseEventHandler<HTMLButtonElement> }) {
+  return <Button {...button} onClick={onClick} variant="ghost" className="bl-review-list-row" aria-label={`${identifier} ${title}`}>
     <span className="bl-review-row-copy"><strong>{title}</strong><span className="bl-review-row-meta"><span>{identifier}</span><span>{author}</span>{source && <span className="bl-review-row-branch" title={`${source}${target ? ` → ${target}` : ''}`}><span aria-hidden="true">⑂ </span>{source}{target ? ` → ${target}` : ''}</span>}</span></span>
     <span className="bl-review-row-status"><span className="bl-review-row-badges">{draft && <Badge>초안</Badge>}<Badge>{status}</Badge></span><small>업데이트 {updated}</small></span>
   </Button>

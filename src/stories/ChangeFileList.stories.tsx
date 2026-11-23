@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { Button, ChangeFileList, FileChangeRow } from '../design-system'
 const paths = ['src/한글/수정.ts', 'src/api/index.ts', 'src/ui/index.ts', 'README.md', 'docs/guide.md', 'docs/setup.md']
-const meta = { title: 'Components/ChangeFileList', component: ChangeFileList, args: { label: '작업 파일', paths, actions: <Button onClick={fn()}>모두 스테이징</Button>, empty: '작업 파일이 깨끗합니다.', renderFile: (index: number) => <FileChangeRow path={paths[index]} status="M" selected={false} staged={false} disabled={false} onToggle={() => {}} onSelect={() => {}} /> }, decorators: [Story => <div style={{ maxWidth: 460 }}><Story /></div>] } satisfies Meta<typeof ChangeFileList>
+const meta = { title: 'Components/ChangeFileList', component: ChangeFileList, args: { label: '작업 파일', paths, actions: filtered => <Button disabled={filtered?.length === 0} onClick={fn()}>{filtered ? `검색 결과 ${filtered.length}개 스테이징` : '모두 스테이징'}</Button>, empty: '작업 파일이 깨끗합니다.', renderFile: (index: number) => <FileChangeRow path={paths[index]} status="M" selected={false} staged={false} disabled={false} onToggle={() => {}} onSelect={() => {}} /> }, decorators: [Story => <div style={{ maxWidth: 460 }}><Story /></div>] } satisfies Meta<typeof ChangeFileList>
 export default meta
 type Story = StoryObj<typeof meta>
 export const SearchTreeResize: Story = { play: async ({ canvasElement }) => {
@@ -22,3 +22,8 @@ export const SearchTreeResize: Story = { play: async ({ canvasElement }) => {
   await userEvent.keyboard('{Home}{ArrowUp}'); await expect(handle).toHaveAttribute('aria-valuenow', '160')
 } }
 export const Empty: Story = { args: { paths: [] } }
+export const SingleFile: Story = { args: { paths: ['README.md'] }, play: async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  await expect(canvas.queryByRole('textbox', { name: '작업 파일 검색' })).toBeNull()
+  await expect(canvas.getByText('README.md', { exact: true })).toBeVisible()
+} }
