@@ -9,7 +9,7 @@ const env = { ...process.env, BRANCHLINE_TEST_DATA: path.join(root, 'profile') }
 const app = await electron.launch({ executablePath: require('electron'), args: [path.resolve('electron/main.cjs')], env })
 const page = await app.firstWindow()
 try {
-  await page.getByRole('heading', { name: /변경을 살펴보고/ }).waitFor()
+  await page.getByRole('heading', { name: '저장소에서 작업 시작', exact: true }).waitFor()
   if (process.env.BRANCHLINE_SCREENSHOTS) await mkdir(process.env.BRANCHLINE_SCREENSHOTS, { recursive: true })
   await checkAuditFixes(app, page, root, async () => {})
 } catch (error) { await page.screenshot({ path: '/tmp/branchline-audit-failure.png' }); throw error }

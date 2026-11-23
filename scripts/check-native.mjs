@@ -23,12 +23,14 @@ try {
     await page.keyboard.press('Tab')
     assert.equal(await dialog.evaluate(element => document.activeElement === document.body || element.contains(document.activeElement)), true, 'Modal must keep the app behind it inert')
   }
+  const helpOpen = await page.getByRole('tooltip').count() > 0
   await page.keyboard.press('Escape')
+  if (helpOpen) { await page.getByRole('tooltip').waitFor({ state: 'hidden' }); await page.keyboard.press('Escape') }
   await dialog.waitFor({ state: 'hidden' })
   assert.equal(await branchButton.evaluate(element => element === document.activeElement), true)
 
   await branchButton.click()
-  await dialog.getByLabel('새 브랜치 이름').fill('feature/design-system')
+  await dialog.getByLabel('새 브랜치 이름', { exact: true }).fill('feature/design-system')
   await dialog.getByRole('button', { name: '예제 생성' }).click()
   await dialog.waitFor({ state: 'hidden' })
   assert.match(await page.getByRole('status').innerText(), /feature\/design-system/)
