@@ -5,6 +5,7 @@ const invoke = async (name, ...args) => {
   return result.value;
 };
 contextBridge.exposeInMainWorld('branchline', {
+  onShortcuts: callback => { const listener = () => callback(); ipcRenderer.on('branchline:shortcuts', listener); return () => ipcRenderer.removeListener('branchline:shortcuts', listener); },
   onCloseRequested: callback => { const listener = () => callback(); ipcRenderer.on('branchline:closeRequested', listener); return () => ipcRenderer.removeListener('branchline:closeRequested', listener); },
   closeWindow: () => invoke('closeWindow'),
   copyMcpConfig: paths => invoke('copyMcpConfig', paths),
@@ -16,6 +17,7 @@ contextBridge.exposeInMainWorld('branchline', {
   hostingVerify: id => invoke('hostingVerify', id), hostingForget: key => invoke('hostingForget', key),
   hostingPrepare: input => invoke('hostingPrepare', input), hostingDiscard: id => invoke('hostingDiscard', id), hostingWrite: id => invoke('hostingWrite', id),
   hostingRead: input => invoke('hostingRead', input), hostingExternal: (account, url) => invoke('hostingExternal', account, url),
+  hostingCopyLink: (account, url) => invoke('hostingCopyLink', account, url),
   bootstrap: () => invoke('bootstrap'), open: path => invoke('open', path), init: () => invoke('init'),
   copyBranchName: (path, ref) => invoke('copyBranchName', path, ref),
   copyCommitSha: (path, sha) => invoke('copyCommitSha', path, sha),
@@ -26,7 +28,7 @@ contextBridge.exposeInMainWorld('branchline', {
   cloneDestination: () => invoke('cloneDestination'), clone: input => invoke('clone', input), cancel: id => invoke('cancel', id),
   changeStats: (path, expected) => invoke('changeStats', path, expected),
   state: path => invoke('state', path), history: (path, input) => invoke('history', path, input),
-  compare: (path, input) => invoke('compare', path, input), diff: (path, input) => invoke('diff', path, input),
+  compare: (path, input) => invoke('compare', path, input), compareCommit: (path, sha, tips) => invoke('compareCommit', path, sha, tips), compareFile: (path, input) => invoke('compareFile', path, input), diff: (path, input) => invoke('diff', path, input),
   fileAction: (path, input) => invoke('fileAction', path, input),
   workingList: (path, folder) => invoke('workingList', path, folder),
   workingRead: (path, file) => invoke('workingRead', path, file),

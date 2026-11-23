@@ -134,7 +134,7 @@ test('GitLab device grant, subgroup paths, serialized refresh rotation and accou
 test('remote writes use immutable single-use plans, SHA guards, scopes and no retry after uncertain responses', async t => {
   const { hosting, advance } = await fixture(t);
   const head = 'a'.repeat(40), base = 'b'.repeat(40);
-  let currentHead = head, attempt = 1, status = 'completed', fail = false, posts = [];
+  let currentHead = head, attempt = 1, status = 'completed', fail = false, merged = true, posts = [];
   const account = { key: 'github:github.com:1', provider: 'github', id: 1, login: 'pm', accessToken: 'fixture-secret', writeAccess: true };
   hosting.accounts.set(account.key, account);
   global.fetch = async (url, options) => {
@@ -142,8 +142,8 @@ test('remote writes use immutable single-use plans, SHA guards, scopes and no re
     if (options.method) {
       posts.push({ url, method: options.method, body: JSON.parse(options.body) });
       if (fail) throw new Error('fixture-secret timeout');
-      if (url.endsWith('/merge')) return json({ merged: true });
-      return url.endsWith('/rerun') || url.endsWith('/cancel') ? new Response(null, { status: 202 }) : json({ number: 14, id: 15 });
+      if (url.endsWith('/merge')) return json({ merged });
+      return url.endsWith('/rerun') || url.endsWith('/cancel') ? new Response(null, { status: 202 }) : json({ number: 14, id: 15, html_url: 'https://github.com/team/repo/pull/14' });
     }
     if (url.includes('/branches/')) return json({ name: decodeURIComponent(url.split('/branches/')[1]), commit: { sha: url.endsWith('main') ? base : currentHead } });
     if (url.endsWith('/actions/runs/9')) return json({ id: 9, head_sha: head, run_attempt: attempt, status });
@@ -158,9 +158,14 @@ test('remote writes use immutable single-use plans, SHA guards, scopes and no re
   await assert.rejects(hosting.executeWrite(plan.id), /원격 상태가 변경/); assert.equal(posts.length, 0);
   await assert.rejects(hosting.prepareWrite(input), /버전이 변경/);
   currentHead = head; plan = await hosting.prepareWrite(input);
-  assert.match((await hosting.executeWrite(plan.id)).message, /병합이 완료/);
+  const result = await hosting.executeWrite(plan.id);
+  assert.equal(result.merged, true);
+  assert.match(result.message, /병합이 완료/);
   assert.deepEqual(posts.at(-1).body, { sha: head, merge_method: 'squash' });
   await assert.rejects(hosting.executeWrite(plan.id), /이미 사용/);
+  merged = false;
+  plan = await hosting.prepareWrite(input);
+  assert.equal((await hosting.executeWrite(plan.id)).merged, false);
   for (const action of ['comment', 'approve', 'request-changes']) {
     plan = await hosting.prepareWrite({ ...input, action, body: '한글 의견' });
     await hosting.executeWrite(plan.id);
@@ -170,7 +175,8 @@ test('remote writes use immutable single-use plans, SHA guards, scopes and no re
   const create = { account: account.key, project: 'team/repo', action: 'create', title: '탭 복원', body: '설명', source: 'feature/tabs', target: 'main', draft: true };
   await assert.rejects(hosting.prepareWrite({ ...create, sourceSha: 'f'.repeat(40), targetSha: base }), /원격 SHA/);
   await assert.rejects(hosting.prepareWrite({ ...create, sourceSha: currentHead, targetSha: 'f'.repeat(40) }), /원격 SHA/);
-  plan = await hosting.prepareWrite({ ...create, sourceSha: currentHead, targetSha: base }); await hosting.executeWrite(plan.id);
+  plan = await hosting.prepareWrite({ ...create, sourceSha: currentHead, targetSha: base });
+  assert.equal((await hosting.executeWrite(plan.id)).url, 'https://github.com/team/repo/pull/14');
   assert.deepEqual(posts.at(-1).body, { title: '탭 복원', body: '설명', head: 'feature/tabs', base: 'main', draft: true });
   await assert.rejects(hosting.prepareWrite({ ...create, source: '../main' }), /브랜치/);
   plan = await hosting.prepareWrite(create); advance(plan.expiresAt); await assert.rejects(hosting.executeWrite(plan.id), /만료/);

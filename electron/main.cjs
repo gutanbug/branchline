@@ -1,5 +1,5 @@
 const agentChat = require('./agent-chat.cjs');
-const { app, BrowserWindow, ipcMain, dialog, shell, safeStorage, clipboard } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, dialog, shell, safeStorage, clipboard } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs/promises');
 const { pathToFileURL } = require('node:url');
@@ -50,11 +50,11 @@ handle('closeWindow', async () => { if (mutations) throw new Error('진행 중�
 handle('bootstrap', async () => ({ ...settings, platform: process.platform, version: app.getVersion() }));
 handle('open', async (recentPath) => {
   if (recentPath) { if (!settings.recent.includes(recentPath)) throw new Error('최근 저장소에 없는 경로입니다.'); return register(recentPath); }
-  const result = await dialog.showOpenDialog(win, { title: 'Git 저장소 열기', properties: ['openDirectory'] });
+  const result = await dialog.showOpenDialog(win, { title: 'Git 저장소 열기', message: '열 Git 저장소 폴더를 선택하세요.', buttonLabel: '저장소 열기', properties: ['openDirectory'] });
   return result.canceled ? null : register(result.filePaths[0]);
 });
 handle('init', async () => {
-  const result = await dialog.showOpenDialog(win, { title: '새 저장소를 만들 빈 폴더 선택', properties: ['openDirectory', 'createDirectory'] });
+  const result = await dialog.showOpenDialog(win, { title: '새 저장소를 만들 빈 폴더 선택', message: '새 Git 저장소를 만들 빈 폴더를 선택하거나 새 폴더를 만드세요. 선택한 폴더에서 git init을 실행합니다.', buttonLabel: '여기에 저장소 만들기', properties: ['openDirectory', 'createDirectory'] });
   if (result.canceled) return null;
   const target = result.filePaths[0];
   if ((await fs.readdir(target)).length) throw new Error('비어 있는 폴더를 선택하세요. 기존 저장소는 열기를 사용하세요.');
@@ -83,7 +83,14 @@ handle('stashDiff', async (cwd, sha) => sync.preview(await authorized(cwd), sha)
 const remoteMonitorController = new AbortController();
 handle('monitorRemote', async cwd => sync.monitor(await authorized(cwd), remoteMonitorController.signal));
 handle('syncState', async (cwd, offset) => sync.snapshot(await authorized(cwd), offset));
-handle('sync', async (cwd, input) => { await authorized(cwd); return operation(input.id, signal => sync.change(cwd, input, signal)); });
+handle('sync', async (cwd, input) => {
+  await authorized(cwd);
+  try { return await operation(input.id, signal => sync.change(cwd, input, signal)); }
+  catch (error) {
+    if (error.pushRecovery) return { rejectedPush: error.pushRecovery };
+    throw error;
+  }
+});
 handle('cancel', id => { operations.get(id)?.abort(); return null; });
 handle('cloneDestination', async () => {
   const result = await dialog.showSaveDialog(win, { title: '복제할 새 폴더 위치', buttonLabel: '위치 선택' });
@@ -97,6 +104,8 @@ handle('clone', async input => {
 handle('state', async cwd => { await authorized(cwd); return git.serial(cwd, () => git.state(cwd)); });
 handle('history', async (cwd, input) => git.history(await authorized(cwd), input));
 handle('compare', async (cwd, input) => git.compare(await authorized(cwd), input));
+handle('compareCommit', async (cwd, sha, tips) => git.compareCommit(await authorized(cwd), sha, tips));
+handle('compareFile', async (cwd, input) => git.compareFile(await authorized(cwd), input));
 handle('amendPreview', async (cwd, sha) => git.amendPreview(await authorized(cwd), sha));
 handle('changeStats', async (cwd, expected) => git.changeStats(await authorized(cwd), expected));
 handle('diff', async (cwd, input) => git.diff(await authorized(cwd), input));
@@ -163,7 +172,7 @@ handle('saveWorkspace', async data => {
   if (!Array.isArray(data.tabs) || data.tabs.length > 30) throw new Error('최대 30개의 탭을 열 수 있습니다.');
   settings.tabs = data.tabs.map(tab => {
     if (!settings.recent.includes(tab.path) && !allowed.has(tab.path)) throw new Error('열지 않은 저장소입니다.');
-    const result = { path: tab.path };
+    const result = { path: tab.path, area: tab.area === 'team' ? 'team' : 'workspace' };
     for (const key of ['view', 'query', 'author', 'file', 'ref', 'after', 'before', 'commitMessage', 'a', 'b', 'mode', 'diffMode']) result[key] = git.text(tab[key] || '', key, key === 'commitMessage' ? 10000 : 4096);
     return result;
   });
@@ -253,11 +262,27 @@ async function mcpConfig(paths) {
 }
 handle('mcpConfig', mcpConfig);
 handle('copyMcpConfig', async paths => { await clipboard.writeText(JSON.stringify(await mcpConfig(paths), null, 2)); return null; });
-handle('hostingExternal', async (account, url) => {
+function accountLink(account, url) {
   const selected = hosting.list().accounts.find(a => a.key === account);
   if (!selected) throw new Error('연결된 계정을 선택하세요.');
-  await shell.openExternal(publicURL(url, selected.host)); return null;
-});
+  return publicURL(url, selected.host);
+}
+handle('hostingExternal', async (account, url) => { await shell.openExternal(accountLink(account, url)); return null; });
+handle('hostingCopyLink', async (account, url) => { await clipboard.writeText(accountLink(account, url)); return null; });
+// Branchline-labelled menu: the default template shows "Electron" and developer tools to end users.
+function applicationMenu() {
+  const name = 'Branchline', mac = process.platform === 'darwin';
+  const send = channel => () => win?.webContents.send(channel);
+  app.setAboutPanelOptions({ applicationName: name, applicationVersion: app.getVersion() });
+  return Menu.buildFromTemplate([
+    ...(mac ? [{ label: name, submenu: [{ role: 'about', label: `${name} 정보` }, { type: 'separator' }, { role: 'services', label: '서비스' }, { type: 'separator' }, { role: 'hide', label: `${name} 숨기기` }, { role: 'hideOthers', label: '기타 숨기기' }, { role: 'unhide', label: '모두 보기' }, { type: 'separator' }, { role: 'quit', label: `${name} 종료` }] }] : []),
+    { label: '파일', submenu: [mac ? { role: 'close', label: '창 닫기' } : { role: 'quit', label: '종료' }] },
+    { label: '편집', submenu: [{ role: 'undo', label: '실행 취소' }, { role: 'redo', label: '다시 실행' }, { type: 'separator' }, { role: 'cut', label: '잘라내기' }, { role: 'copy', label: '복사' }, { role: 'paste', label: '붙여넣기' }, { role: 'selectAll', label: '모두 선택' }] },
+    { label: '보기', submenu: [{ role: 'resetZoom', label: '실제 크기' }, { role: 'zoomIn', label: '확대' }, { role: 'zoomOut', label: '축소' }, { type: 'separator' }, { role: 'togglefullscreen', label: '전체 화면' }, ...(app.isPackaged ? [] : [{ type: 'separator' }, { role: 'reload', label: '새로고침 (개발)' }, { role: 'toggleDevTools', label: '개발자 도구 (개발)' }])] },
+    { label: '윈도우', submenu: [{ role: 'minimize', label: '최소화' }, { role: 'zoom', label: '확대/축소' }, ...(mac ? [{ type: 'separator' }, { role: 'front', label: '모두 앞으로 가져오기' }] : [])] },
+    { label: '도움말', role: 'help', submenu: [{ label: '키보드 단축키', accelerator: 'CmdOrCtrl+/', click: send('branchline:shortcuts') }] },
+  ]);
+}
 app.whenReady().then(async () => {
   if (!primaryInstance) return;
   settingsFile = path.join(app.getPath('userData'), 'workspace.json');
@@ -265,6 +290,7 @@ app.whenReady().then(async () => {
   await hosting.load();
   try { const stored = JSON.parse(await fs.readFile(settingsFile, 'utf8')); if (stored.version === 1 && Array.isArray(stored.recent) && Array.isArray(stored.tabs)) settings = { ...settings, ...stored }; } catch { /* first launch */ }
   for (const tab of settings.tabs) if (typeof tab.path === 'string') allowed.add(tab.path);
+  Menu.setApplicationMenu(applicationMenu());
   win = new BrowserWindow({ width: 1440, height: 950, minWidth: 760, minHeight: 580, title: 'Branchline', backgroundColor: '#fafafa', webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true } });
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.webContents.on('will-navigate', event => event.preventDefault());

@@ -216,8 +216,14 @@ class Hosting {
         throw new Error(e.status && e.status < 500 ? `원격 요청이 거절되었습니다 (HTTP ${e.status}). 권한·보호 규칙·SHA를 확인하고 결과를 새로 조회하세요. 자동 재시도하지 않았습니다.` : '요청 결과를 확인하지 못했습니다. 원격에 반영되었을 수 있으므로 제공자에서 결과를 확인하세요. 자동 재전송하지 않았습니다.');
       }
       const body = result.body;
+      if (plan.action === 'create') {
+        const github = a.provider === 'github', id = String((github ? body?.number : body?.iid) || '');
+        let url = '';
+        try { url = publicURL(github ? body?.html_url : body?.web_url, accountConfig(a).host); } catch { /* A missing link must not turn a successful POST into a retry. */ }
+        return { id, url, message: id ? `${github ? 'PR #' : 'MR !'}${id} 생성 완료` : '생성 요청이 접수되었습니다. 프로젝트 현황에서 결과를 확인하세요.' };
+      }
       const merged = plan.action === 'merge' && (a.provider === 'github' ? body.merged === true : body.state === 'merged');
-      return { message: plan.action === 'merge' ? merged ? '병합이 완료되었습니다. 상세를 새로 조회하세요.' : '병합 요청 응답을 받았습니다. 완료 여부는 상세 새로고침 또는 제공자에서 확인하세요.' : `${plan.label} 요청이 접수되었습니다. 최신 결과를 조회하세요.`, id: String(plan.action === 'create' ? a.provider === 'github' ? body.number || '' : body.iid || '' : '') };
+      return { ...(plan.action === 'merge' && { merged }), message: plan.action === 'merge' ? merged ? '병합이 완료되었습니다.' : '병합 요청에 응답했지만 서버에서 완료를 확인하지 못했습니다.' : `${plan.label} 요청이 접수되었습니다. 최신 결과를 조회하세요.`, id: '' };
     });
   }
   async read(input) {

@@ -119,3 +119,20 @@ test('GitLab CI failure filter uses MR head_pipeline and never counts older/merg
     assert.equal(result.ciSummary.unknown, pipeline?.sha === head ? 0 : 1);
   }
 });
+
+test('review progress compares the full patch and invalidates opaque files when the review version changes', async t => {
+  const { hosting, query } = fixture(t, true);
+  let commit = head, tail = 'a';
+  const review = () => ({ ...github, head: { ...github.head, sha: commit } });
+  global.fetch = async url => url.endsWith('/pulls/12') ? json(review()) : json([
+    { filename: 'large', patch: '+'.repeat(200000) + tail }, { filename: 'binary', sha: base },
+  ]);
+  const read = async () => (await hosting.read({ ...query, kind: 'review-files', version: snapshot(review(), true).version })).items;
+  const a = await read(); commit = old;
+  const b = await read(); tail = 'b';
+  const c = await read();
+  assert.equal(a[0].fingerprint, b[0].fingerprint);
+  assert.notEqual(a[1].fingerprint, b[1].fingerprint);
+  assert.equal(b[0].body, c[0].body);
+  assert.notEqual(b[0].fingerprint, c[0].fingerprint);
+});

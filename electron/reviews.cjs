@@ -15,7 +15,12 @@ function body(value) { return { body: text(value, 20000), truncated: typeof valu
 function note(row, gh, current) {
   if (!Number.isSafeInteger(row.id) || row.id < 1) throw new Error('댓글 식별자가 올바르지 않습니다.');
   const commit = sha(row.commit_id || row.position?.head_sha);
-  return { id: String(row.id), title: text(gh ? row.user?.login : row.author?.username) || '작성자 미제공', subtitle: row.system ? '시스템 기록' : '', date: text(row.updated_at || row.created_at || row.submitted_at), state: row.resolvable ? row.resolved ? 'resolved' : 'unresolved' : '', ...body(row.body), sha: commit, originalSha: sha(row.original_commit_id), path: text(row.path || row.position?.new_path || row.position?.old_path), line: row.line ?? row.position?.new_line ?? row.position?.old_line ?? null, originalLine: row.original_line ?? null, side: text(row.side || row.position?.position_type), replyTo: row.in_reply_to_id ? String(row.in_reply_to_id) : '', relation: commit ? commit === current.head ? '현재 Head' : '다른 커밋의 기록' : '커밋 귀속 정보 없음', url: '' };
+  const position = row.position;
+  const line = gh ? row.line : position?.new_line ?? position?.old_line;
+  const side = gh ? row.side : position?.new_line != null ? 'RIGHT' : 'LEFT';
+  const sameBase = gh || ((!position?.base_sha || position.base_sha === current.base) && (!position?.start_sha || position.start_sha === current.start));
+  const diffSide = commit && commit === current.head && sameBase && Number.isSafeInteger(line) && line > 0 && ['LEFT', 'RIGHT'].includes(side) && (gh || !position?.position_type || position.position_type === 'text') ? side : undefined;
+  return { diffSide, id: String(row.id), title: text(gh ? row.user?.login : row.author?.username) || '작성자 미제공', subtitle: row.system ? '시스템 기록' : '', date: text(row.updated_at || row.created_at || row.submitted_at), state: row.resolvable ? row.resolved ? 'resolved' : 'unresolved' : '', ...body(row.body), sha: commit, originalSha: sha(row.original_commit_id), path: text(row.path || row.position?.new_path || row.position?.old_path), line: row.line ?? row.position?.new_line ?? row.position?.old_line ?? null, originalLine: row.original_line ?? null, side: text(row.side || row.position?.position_type), replyTo: row.in_reply_to_id ? String(row.in_reply_to_id) : '', relation: commit ? commit === current.head ? '현재 Head' : '다른 커밋의 기록' : '커밋 귀속 정보 없음', url: '' };
 }
 
 async function readResource(input, gh, base, get, link) {
@@ -54,7 +59,10 @@ async function readResource(input, gh, base, get, link) {
     if (gh && Number.isFinite(before.changed_files) && before.changed_files > 3000) warnings.push(`전체 ${before.changed_files}개 중 API 조회 상한은 3,000개입니다. 나머지는 로컬 비교 또는 제공자에서 확인하세요.`);
     items = rows.map(row => {
       const patch = gh ? row.patch : row.diff, name = text(gh ? row.filename : row.new_path || row.old_path);
-      return { id: name, title: name, subtitle: text(gh ? row.previous_filename : row.old_path), state: gh ? text(row.status) : row.deleted_file ? 'removed' : row.new_file ? 'added' : row.renamed_file ? 'renamed' : 'modified', url: '', date: '', body: text(patch, 200000), truncated: typeof patch === 'string' && patch.length > 200000, unavailable: !patch || !!row.too_large || !!row.collapsed, additions: Number.isSafeInteger(row.additions) ? row.additions : null, deletions: Number.isSafeInteger(row.deletions) ? row.deletions : null, generated: !!row.generated_file, sha: current.head };
+      const blob = sha(row.sha);
+      const uncertain = !patch || row.too_large || row.collapsed;
+      const fingerprint = createHash('sha256').update(JSON.stringify([name, row.previous_filename ?? row.old_path, row.status, row.a_mode, row.b_mode, row.new_file, row.deleted_file, row.renamed_file, blob, patch, row.additions, row.deletions, uncertain ? current.version : ''])).digest('hex');
+      return { fingerprint, id: name, title: name, subtitle: text(gh ? row.previous_filename : row.old_path), state: gh ? text(row.status) : row.deleted_file ? 'removed' : row.new_file ? 'added' : row.renamed_file ? 'renamed' : 'modified', url: '', date: '', body: text(patch, 200000), truncated: typeof patch === 'string' && patch.length > 200000, unavailable: !patch || !!row.too_large || !!row.collapsed, additions: Number.isSafeInteger(row.additions) ? row.additions : null, deletions: Number.isSafeInteger(row.deletions) ? row.deletions : null, generated: !!row.generated_file, sha: current.head };
     });
   } else if (input.kind === 'review-comments' || input.kind === 'review-inline') {
     items = rows.map(row => {
