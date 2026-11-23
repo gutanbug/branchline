@@ -16,19 +16,30 @@ export default meta
 type Story = StoryObj<typeof meta>
 export const CreateFromComparison: Story = { play: async ({ canvasElement }) => {
   const canvas = within(canvasElement)
-  await userEvent.selectOptions(await canvas.findByRole('combobox', { name: 'PR/MR 작성 계정' }), 'github:test')
+  await expect(await canvas.findByRole('combobox', { name: 'PR/MR 작성 계정' })).toHaveValue('github:test')
   await expect(canvas.getByRole('textbox', { name: 'PR/MR 원격 프로젝트' })).toHaveValue('team/project')
-  await userEvent.click(canvas.getByRole('button', { name: '원격 프로젝트 확인' }))
   await userEvent.click(await canvas.findByRole('button', { name: 'PR 만들기' }))
   const dialog = within(canvas.getByRole('dialog'))
   await expect(dialog.getByRole('textbox', { name: '출발 원격 브랜치' })).toHaveValue('feature/review')
   await expect(dialog.getByRole('textbox', { name: '대상 원격 브랜치' })).toHaveValue('main')
   await expect(dialog.getByRole('textbox', { name: '출발 원격 브랜치' })).toBeDisabled()
   await userEvent.type(dialog.getByRole('textbox', { name: '제목' }), '비교한 변경 검토')
-  await userEvent.click(dialog.getByRole('button', { name: '최신 상태 확인 · 실행 전 검토' }))
+  await userEvent.click(dialog.getByRole('button', { name: 'PR/MR 생성' }))
   await expect(prepare).toHaveBeenCalledWith(expect.objectContaining({ source: 'feature/review', target: 'main', sourceSha, targetSha, project: 'team/project' }))
-  await userEvent.click(await dialog.findByRole('button', { name: '원격 실행 · PR/MR 생성' }))
   await expect(write).toHaveBeenCalledWith('plan')
+  await expect(write).toHaveBeenCalledTimes(1)
+  await expect(canvas.queryByRole('dialog')).not.toBeInTheDocument()
 } }
 export const NoAccount: Story = { args: { api: { ...api, hostingAccounts: async () => ({ accounts: [], warning: '' }) } } }
 export const ReadFailure: Story = { args: { api: { ...api, hostingAccounts: async () => { throw new Error('연결 정보를 읽지 못했습니다.') } } } }
+
+export const MultipleAccounts: Story = { args: { api: { ...api, hostingAccounts: async () => {
+  const result = await api.hostingAccounts(), account = result.accounts[0]
+  return { ...result, accounts: [account, { ...account, key: 'github:work', login: 'work' }] }
+} } }, play: async ({ canvasElement }) => {
+  const canvas = within(canvasElement), select = await canvas.findByRole('combobox', { name: 'PR/MR 작성 계정' })
+  await expect(select).toHaveValue('')
+  await expect(canvas.queryByRole('button', { name: 'PR 만들기' })).not.toBeInTheDocument()
+  await userEvent.selectOptions(select, 'github:work')
+  await expect(await canvas.findByRole('button', { name: 'PR 만들기' })).toBeVisible()
+} }

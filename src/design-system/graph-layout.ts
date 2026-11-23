@@ -18,7 +18,7 @@ export function layoutGraph(commits: { sha: string; parents: string[] }[], conti
       if (target < 0) { target = !edges.length && lanes[lane] === null ? lane : lanes.indexOf(null); if (target < 0) target = lanes.length; lanes[target] = parent }
       edges.push({ from: lane, to: target, parent })
     }
-    const through = incoming.flatMap((sha, from) => sha && sha !== commit.sha ? [{ from, to: lanes.indexOf(sha), parent: sha }] : [])
+    const through = incoming.flatMap((sha, from) => sha && sha !== commit.sha ? [{ from, to: from, parent: sha }] : [])
     const width = Math.max(lane + 1, incoming.length, lanes.length)
     while (lanes.length && lanes.at(-1) === null) lanes.pop()
     return { sha: commit.sha, lane, incoming, edges, through, outside, width }
@@ -26,16 +26,26 @@ export function layoutGraph(commits: { sha: string; parents: string[] }[], conti
 }
 
 
-/** Only propagate refs along actual, loaded parent edges; lane colors are not branch identity. */
+// Follow only edges present in this view, and only when a user inspects a node.
 export function graphBranches(commits: { sha: string; parents: string[] }[], refs: { name: string; sha: string; ref?: string }[]) {
   const positions = new Map(commits.map((commit, index) => [commit.sha, index]))
-  const branches = new Map(commits.map(commit => [commit.sha, new Set<typeof refs[number]>()]))
-  for (const ref of refs) if (!ref.ref || /^refs\/(heads|remotes)\//.test(ref.ref)) branches.get(ref.sha)?.add(ref)
+  const children = new Map<string, string[]>()
   commits.forEach((commit, index) => {
     for (const parent of commit.parents) {
       if ((positions.get(parent) ?? -1) <= index) continue
-      for (const ref of branches.get(commit.sha)!) branches.get(parent)!.add(ref)
+      const entries = children.get(parent)
+      if (entries) entries.push(commit.sha)
+      else children.set(parent, [commit.sha])
     }
   })
-  return branches
+  return (sha: string) => {
+    const visited = new Set<string>(), pending = [sha]
+    while (pending.length) {
+      const child = pending.pop()!
+      if (visited.has(child)) continue
+      visited.add(child)
+      for (const next of children.get(child) || []) pending.push(next)
+    }
+    return refs.filter(ref => visited.has(ref.sha) && (!ref.ref || /^refs\/(heads|remotes)\//.test(ref.ref)))
+  }
 }

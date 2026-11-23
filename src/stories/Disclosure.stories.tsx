@@ -13,3 +13,4 @@ export const Collapsed: Story = { play: async ({ canvasElement }) => {
   await expect(canvas.getByText('제공자에서 열기')).not.toBeVisible()
 } }
 export const Expanded: Story = { args: { initiallyOpen: true, title: '계정 관리 · 연결 상태와 권한을 확인하세요' } }
+export const Tree: Story = { args: { variant: 'tree', title: 'src', children: <span>components</span> } }

@@ -156,8 +156,8 @@ export const NodeBranches: Story = {
     await expect(args.onSelect).toHaveBeenCalledWith('left')
     await userEvent.unhover(row.querySelector('.bl-graph-node-trigger')!)
     const membership = graphBranches(args.commits, args.refs!)
-    await expect([...membership.get('root')!].map(ref => ref.name)).toEqual(['main', 'origin/feature/한글'])
-    await expect([...graphBranches([commits[0], commits[3]], args.refs!).get('root')!]).toEqual([])
+    await expect(membership('root').map(ref => ref.name)).toEqual(['main', 'origin/feature/한글'])
+    await expect(graphBranches([commits[0], commits[3]], args.refs!)('root')).toEqual([])
   },
 }
 export const UnknownNodeBranch: Story = {

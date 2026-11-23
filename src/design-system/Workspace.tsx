@@ -1,31 +1,53 @@
+import { ToastMessage } from './Toast'
 import { useRef, useState } from 'react'
 import { Badge, Brand, BranchFilter, Button, Checkbox, Dialog, Disclosure, EmptyState, Notice, TextField, ToolbarButton } from './components'
 
+import { Icon } from './IconButton'
+import { Tooltip } from './Tooltip'
 import { SyncBadge } from './SyncBadge'
 import { exampleBranches, exampleCommits } from './examples'
 import type { Commit } from './examples'
 
 export type BranchGroup = { id: string; label: string; kind?: 'worktree' | 'stash'; action?: { label: string; selected?: boolean; onClick: () => void }; flat?: boolean; empty?: string; items: { id: string; label: string; current?: boolean; tracking?: { ahead: number | null; behind: number | null }; description?: string; disabled?: boolean }[] }
-export function BranchTree({ branches = [], value, currentBranch = '', onChange, groups, disabled = false, renderBranch, revealAll = false }: { revealAll?: boolean; branches?: string[]; value: string | null; currentBranch?: string; onChange: (branch: string | null) => void; groups?: BranchGroup[]; disabled?: boolean; renderBranch?: (id: string, button: React.ReactElement) => React.ReactNode }) {
+export function BranchTree({ branches = [], value, currentBranch = '', onChange, groups, disabled = false, renderBranch, renderStash, renderWorktree, revealAll = false, searchKey = '' }: { searchKey?: string; revealAll?: boolean; branches?: string[]; value: string | null; currentBranch?: string; onChange: (branch: string | null) => void; groups?: BranchGroup[]; disabled?: boolean; renderWorktree?: (id: string, button: React.ReactElement) => React.ReactNode; renderStash?: (id: string, button: React.ReactElement) => React.ReactNode; renderBranch?: (id: string, button: React.ReactElement) => React.ReactNode }) {
   const sections: BranchGroup[] = groups || [{ id: 'local', label: 'LOCAL', items: branches.map(branch => ({ id: branch, label: branch, current: branch === currentBranch })) }]
   const selection = sections.filter(group => !group.kind).flatMap(group => group.items).find(item => item.id === value)?.id || currentBranch || sections.flatMap(group => group.items).find(item => item.current)?.id || ''
   const [expansion, setExpansion] = useState<{ selection: string; folders: Record<string, boolean> }>({ selection, folders: {} })
-  const expanded = expansion.selection === selection ? expansion.folders : {}
-  function setExpanded(patch: Record<string, boolean>) { setExpansion({ selection, folders: { ...expanded, ...patch } }) }
+  const [searchExpansion, setSearchExpansion] = useState({ query: searchKey, folders: {} as Record<string, boolean> })
+  const active = revealAll ? searchExpansion.query === searchKey && searchExpansion : expansion.selection === selection && expansion
+  const expanded = active ? active.folders : {}
+  function setExpanded(patch: Record<string, boolean>) {
+    const folders = { ...expanded, ...patch }
+    if (revealAll) setSearchExpansion({ query: searchKey, folders })
+    else setExpansion({ selection, folders })
+  }
   function folderPaths(group: BranchGroup) { return [...new Set(group.items.flatMap(item => item.label.split('/').slice(0, -1).map((_, index) => item.label.split('/').slice(0, index + 1).join('/'))))] }
   function expandGroup(group: BranchGroup, open: boolean) { setExpanded({ [group.id]: true, ...Object.fromEntries(folderPaths(group).map(folder => [`${group.id}/${folder}`, open])) }) }
-  function nodes(group: BranchGroup, prefix = ''): React.ReactNode {
-    const items = group.items.filter(item => item.label.startsWith(prefix))
-    const children = [...new Set(items.map(item => group.kind || group.flat ? item.id : item.label.slice(prefix.length).split('/')[0]))]
-    return children.map(name => {
+  function nodes(group: BranchGroup, items = group.items, prefix = ''): React.ReactNode {
+    const children = new Map<string, BranchGroup['items']>()
+    for (const item of items) {
+      const name = group.kind || group.flat ? item.id : item.label.slice(prefix.length).split('/', 1)[0]
+      const siblings = children.get(name)
+      if (siblings) siblings.push(item)
+      else children.set(name, [item])
+    }
+    return [...children].map(([name, entries]) => {
       const folder = prefix + name
-      const descendants = !group.kind && !group.flat && items.some(item => item.label.startsWith(`${folder}/`))
-      if (descendants) return <Disclosure key={folder} title={name} open={expanded[`${group.id}/${folder}`] ?? (revealAll || items.some(item => item.id === selection && item.label.startsWith(`${folder}/`)))} onOpenChange={open => setExpanded({ [`${group.id}/${folder}`]: open })}><div className="bl-tree-children">{nodes(group, `${folder}/`)}</div></Disclosure>
-      const entries = items.filter(item => group.kind || group.flat ? item.id === name : item.label === folder)
-      return entries.map(item => { const button = <Button variant="ghost" key={item.id} className="bl-repo-tree-item" disabled={disabled || item.disabled} aria-pressed={value === item.id} aria-label={`${group.kind === 'worktree' ? 'Worktree 열기' : group.kind === 'stash' ? 'Stash 보기' : '이력 조회'}: ${group.kind ? `${item.label} · ${item.id}` : item.id.replace(/^refs\/(heads|remotes)\//, '')}`} aria-description={item.tracking ? `추적 브랜치 기준 · 받을 커밋 ${item.tracking.behind ?? '확인 불가'} · 보낼 커밋 ${item.tracking.ahead ?? '확인 불가'}` : undefined} title={item.description || item.label} onClick={() => onChange(item.id)}><span aria-hidden="true">{group.kind === 'worktree' ? '▱' : group.kind === 'stash' ? '▣' : '⑂'}</span><span className="bl-repo-tree-label"><span>{group.kind || group.flat ? item.label : name}</span>{item.description && <small>{item.description}</small>}{item.tracking && <span className="bl-branch-sync"><SyncBadge direction="incoming" count={item.tracking.behind} /><SyncBadge direction="outgoing" count={item.tracking.ahead} /></span>}</span>{item.current && <Badge>{group.kind === 'worktree' ? '현재' : 'HEAD'}</Badge>}</Button>; return renderBranch && !group.kind ? <div className="bl-tree-branch-actions" key={item.id}>{renderBranch(item.id, button)}</div> : button })
+      if (!group.kind && !group.flat && entries[0].label !== folder) {
+        const key = `${group.id}/${folder}`
+        const open = expanded[key] ?? (revealAll || entries.some(item => item.id === selection))
+        return <Disclosure variant="tree" key={folder} title={<><Icon name={open ? 'folderOpen' : 'folder'} />{name}</>} open={open} onOpenChange={open => setExpanded({ [key]: open })}>{open && <div className="bl-tree-children">{nodes(group, entries, `${folder}/`)}</div>}</Disclosure>
+      }
+      return entries.map(item => {
+        const branchName = item.id.replace(/^refs\/(heads|remotes)\//, '')
+        const button = <Button variant="ghost" key={item.id} className="bl-repo-tree-item" data-branch={group.kind ? undefined : true} disabled={disabled || item.disabled} aria-pressed={value === item.id} aria-label={`${group.kind === 'worktree' ? 'Worktree 열기' : group.kind === 'stash' ? 'Stash 보기' : '이력 조회'}: ${group.kind ? `${item.label} · ${item.id}` : branchName}`} aria-description={item.tracking ? `추적 브랜치 기준 · 받을 커밋 ${item.tracking.behind ?? '확인 불가'} · 보낼 커밋 ${item.tracking.ahead ?? '확인 불가'}` : undefined} title={group.kind ? item.description || item.label : undefined} onClick={() => onChange(item.id)}>{group.kind ? <span aria-hidden="true">{group.kind === 'worktree' ? '▱' : '▣'}</span> : <Icon name="branch" />}<span className="bl-repo-tree-label"><span>{group.kind || group.flat ? item.label : name}</span>{item.description && <small>{item.description}</small>}{item.tracking && <span className="bl-branch-sync"><SyncBadge direction="incoming" count={item.tracking.behind} /><SyncBadge direction="outgoing" count={item.tracking.ahead} /></span>}</span>{item.current && <Badge>{group.kind === 'worktree' ? '현재' : 'HEAD'}</Badge>}</Button>
+        if (!group.kind) return <div className="bl-tree-branch-actions" key={item.id}><Tooltip side="bottom" content={<code>{branchName}</code>} renderTrigger={renderBranch && (trigger => renderBranch(item.id, trigger))}>{button}</Tooltip></div>
+        const render = group.kind === 'worktree' ? renderWorktree : renderStash
+        return render ? <div className="bl-tree-branch-actions" key={item.id}>{render(item.id, button)}</div> : button
+      })
     })
   }
-  return <nav className="bl-branch-tree" aria-label="브랜치 트리"><Button variant="ghost" className="bl-repo-tree-all" disabled={disabled} aria-pressed={value === null} onClick={() => onChange(null)}>전체 브랜치 그래프</Button>{sections.map(group => <div className="bl-tree-group" key={group.id} data-folders={!group.kind && !group.flat}><Disclosure title={`${group.label} · ${group.items.length}`} open={expanded[group.id] ?? true} onOpenChange={open => setExpanded({ [group.id]: open })}>{group.action && <Button variant="ghost" className="bl-repo-tree-all" disabled={disabled} aria-pressed={group.action.selected} onClick={group.action.onClick}>{group.action.label}</Button>}{group.items.length ? <div className="bl-tree-children">{nodes(group)}</div> : <p className="bl-tree-empty">{group.empty || '브랜치가 없습니다.'}</p>}</Disclosure>{!group.kind && !group.flat && <div className="bl-tree-expand-tools"><Button variant="ghost" aria-label={`${group.label} 전체 펼치기`} title={`${group.label} 전체 펼치기`} disabled={!group.items.length} onClick={() => expandGroup(group, true)}><svg className="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 8 5-5 5 5M7 16l5 5 5-5M4 12h16" /></svg></Button><Button variant="ghost" aria-label={`${group.label} 전체 접기`} title={`${group.label} 전체 접기`} disabled={!group.items.length} onClick={() => expandGroup(group, false)}><svg className="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 3 5 5 5-5M7 21l5-5 5 5M4 12h16" /></svg></Button></div>}</div>)}</nav>
+  return <nav className="bl-branch-tree" aria-label="브랜치 트리"><Button variant="ghost" className="bl-repo-tree-all" disabled={disabled} aria-pressed={value === null} onClick={() => onChange(null)}>전체 브랜치 그래프</Button>{sections.map(group => <div className="bl-tree-group" key={group.id} data-folders={!group.kind && !group.flat}><Disclosure variant="tree" title={`${group.label} · ${group.items.length}`} open={expanded[group.id] ?? true} onOpenChange={open => setExpanded({ [group.id]: open })}>{group.action && <Button variant="ghost" className="bl-repo-tree-all" disabled={disabled} aria-pressed={group.action.selected} onClick={group.action.onClick}>{group.action.label}</Button>}{group.items.length ? <div className="bl-tree-children">{(expanded[group.id] ?? true) && nodes(group)}</div> : <p className="bl-tree-empty">{group.empty || '브랜치가 없습니다.'}</p>}</Disclosure>{!group.kind && !group.flat && <div className="bl-tree-expand-tools"><Button variant="ghost" aria-label={`${group.label} 전체 펼치기`} title={`${group.label} 전체 펼치기`} disabled={!group.items.length} onClick={() => expandGroup(group, true)}><svg className="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 8 5-5 5 5M7 16l5 5 5-5M4 12h16" /></svg></Button><Button variant="ghost" aria-label={`${group.label} 전체 접기`} title={`${group.label} 전체 접기`} disabled={!group.items.length} onClick={() => expandGroup(group, false)}><svg className="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 3 5 5 5-5M7 21l5-5 5 5M4 12h16" /></svg></Button></div>}</div>)}</nav>
 }
 
 export function CommitList({ commits, selectedHash, onSelect }: { commits: Commit[]; selectedHash: string | null; onSelect: (commit: Commit) => void }) {
@@ -56,7 +78,7 @@ export function Workspace({ loading = false, error = false }: { loading?: boolea
     <header className="appbar"><Brand /><div className="repo-tab"><code>branchline-desktop</code><Badge>예제</Badge></div><div className="bl-toolbar" aria-label="예제 저장소 도구"><ToolbarButton icon={<svg className="ico" viewBox="0 0 24 24"><path d="M12 3v11m0 0-4-4m4 4 4-4M4 19h16" /></svg>} onClick={() => setNotice('예제 · 원격 이력을 확인했습니다. 실제 fetch는 실행하지 않습니다.')}>Fetch</ToolbarButton><ToolbarButton icon={<svg className="ico" viewBox="0 0 24 24"><path d="M12 20V9m0 0-4 4m4-4 4 4M4 4h16" /></svg>} disabled title="디자인 검토 단계에서는 Push를 사용할 수 없습니다">Push</ToolbarButton><ToolbarButton icon={<svg className="ico" viewBox="0 0 24 24"><path d="M6 3v18M18 3v5c0 5-12 3-12 9" /></svg>} onClick={() => dialog.current?.showModal()}>Branch</ToolbarButton></div></header>
     <div className="shell"><aside className="sidebar"><div><p className="bl-kicker">WORKSPACE</p><div className="current-branch-indicator"><code>{currentBranch}</code></div><small>현재 체크아웃</small></div><BranchTree branches={exampleBranches} value={viewBranch} currentBranch={currentBranch} onChange={changeBranch} /><div className="sidebar-footer">Design system <span className="num">0.1</span><br />탐색 / 작업 / 상세</div></aside>
       <main className="workspace"><div className="workspace-head"><div className="bl-kicker">BRANCHLINE / HISTORY</div><div className="bl-row"><h1>커밋 그래프</h1><Badge>예제</Badge></div><p>브랜치의 흐름을 살펴보고, 커밋을 선택해 변경 내용을 확인하세요.</p></div>
-        {notice && <Notice>{notice}</Notice>}
+        <ToastMessage scope="예제 저장소" tone="success" message={notice} />
         <div className="work-split"><section className="history" aria-label="커밋 탐색"><div className="filterbar"><TextField label="커밋 검색" type="search" placeholder="메시지, 해시, 작성자, 파일" value={query} onChange={event => { setQuery(event.target.value); setSelected(null); setIncludeChange(false) }} /><BranchFilter branches={exampleBranches} value={viewBranch} onChange={changeBranch} /></div><p className="result-meta"><span className="num">{visible.length}</span>개 커밋 · 조회: <code>{viewBranch ?? '전체 브랜치'}</code></p>
           {loading ? <Notice>예제 · 커밋 이력을 불러오는 중입니다…</Notice> : error ? <EmptyState title="커밋 이력을 불러오지 못했습니다">예제 오류 상태입니다. 실제 앱에서는 저장소 연결을 확인하고 다시 시도합니다.</EmptyState> : <CommitList commits={visible} selectedHash={selected?.hash ?? null} onSelect={commit => { setSelected(commit); setIncludeChange(false) }} />}
           <div className="bl-preview-note">예제 이력 레인 · 실제 Git 부모 관계를 계산하는 그래프는 후속 구현 대상입니다.</div>

@@ -9,7 +9,10 @@ export const Default: Story = {}
 export const Keyboard: Story = { play: async ({ canvasElement }) => {
   const canvas = within(canvasElement), body = within(canvasElement.ownerDocument.body)
   await userEvent.click(canvas.getByRole('button', { name: 'feature/검토 메뉴' }))
-  await expect(await body.findByRole('menuitem', { name: /체크아웃/ })).toHaveAttribute('aria-disabled', 'true')
+  const disabled = await body.findByRole('menuitem', { name: /체크아웃/ })
+  await expect(disabled).toHaveAttribute('aria-disabled', 'true')
+  await expect(disabled).toHaveAccessibleDescription('변경을 먼저 보관하세요')
+  await expect(disabled.querySelector('small')).toBeNull()
   await userEvent.keyboard('{Escape}')
   await waitFor(() => expect(canvas.getByRole('button', { name: 'feature/검토 메뉴' })).toHaveFocus())
   await userEvent.keyboard('{Enter}')
@@ -18,6 +21,8 @@ export const Keyboard: Story = { play: async ({ canvasElement }) => {
   await waitFor(() => expect(body.getByRole('menuitem', { name: 'Solo · 이 브랜치만 보기' })).toHaveFocus())
   await userEvent.keyboard('{Enter}')
   await waitFor(() => expect(select).toHaveBeenCalled())
+  await waitFor(() => expect(canvas.getByRole('button', { name: 'feature/검토 메뉴' })).toHaveFocus())
+  await waitFor(() => expect(canvasElement.ownerDocument.querySelector('.bl-context-menu')).toBeNull())
 } }
 export const LongName: Story = { args: { label: 'origin/feature/매우-긴-브랜치-이름의-줄바꿈과-화면-경계-확인' } }
 export const Submenu: Story = { args: { groups: [[{ label: 'Fetch / Pull', items: [{ label: 'Fetch', onClick: select }, { label: 'Pull', onClick: select, disabled: true, hint: '이 브랜치를 먼저 체크아웃하세요' }] }]] }, play: async ({ canvasElement }) => {
@@ -38,4 +43,16 @@ export const Submenu: Story = { args: { groups: [[{ label: 'Fetch / Pull', items
   await expect(body.getByRole('menu', { name: 'feature/검토 메뉴' })).toBeVisible()
   await userEvent.keyboard('{Escape}')
   await waitFor(() => expect(opener).toHaveFocus())
+} }
+export const BlockedAction: Story = { play: async ({ canvasElement }) => {
+  const canvas = within(canvasElement), body = within(canvasElement.ownerDocument.body)
+  await userEvent.click(canvas.getByRole('button', { name: 'feature/검토 메뉴' }))
+  const item = await body.findByRole('menuitem', { name: '체크아웃' })
+  await userEvent.keyboard('{ArrowDown}{End}')
+  await expect(item).toHaveFocus()
+  await expect(await body.findByRole('tooltip')).toHaveTextContent('변경을 먼저 보관하세요')
+  await userEvent.keyboard('{Enter}')
+  await expect(item).toBeVisible()
+  await userEvent.keyboard('{Escape}')
+  await waitFor(() => expect(canvas.getByRole('button', { name: 'feature/검토 메뉴' })).toHaveFocus())
 } }

@@ -21,3 +21,12 @@ export const Default: Story = { play: async ({ canvasElement }) => {
   await expect(canvas.queryByRole('tab', { name: /설정.ts/ })).toBeNull()
 } }
 export const Narrow: Story = { decorators: [Story => <div style={{ width: 310, maxWidth: '100%' }}><Story /></div>] }
+
+export const GraphOnly: Story = {
+  render: () => <ContentTabs hideSingleTab label="검토 탭" selected="graph" tabs={[{ id: 'graph', label: '그래프', content: <p>커밋 이력</p> }]} onSelect={() => {}} onClose={() => {}} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.queryByRole('tablist')).not.toBeInTheDocument()
+    await expect(canvas.getByRole('region', { name: '그래프' })).toBeVisible()
+  },
+}

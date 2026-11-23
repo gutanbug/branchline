@@ -19,8 +19,11 @@ export const RetryAppend: Story = { beforeEach: () => {
   await expect(canvas.queryByRole('button', { name: '이전 기록 더 불러오기' })).not.toBeInTheDocument()
   await expect(canvas.queryByRole('button', { name: '최신 이력' })).not.toBeInTheDocument()
   await expect(await canvas.findByRole('alert')).toHaveTextContent('검증용 추가 조회 실패')
-  await expect(canvas.getAllByRole('button', { name: /기록 \d+ / })).toHaveLength(100)
+  await expect(scroller.dataset.commitCount).toBe('100')
+  await expect(canvas.getAllByRole('button', { name: /기록 \d+ / }).length).toBeLessThan(100)
   await userEvent.click(canvas.getByRole('button', { name: '이력 다시 시도' }))
-  await waitFor(() => expect(canvas.getAllByRole('button', { name: /기록 \d+ / })).toHaveLength(101))
+  await waitFor(() => expect(scroller.dataset.commitCount).toBe('101'))
+  scroller.scrollTop = scroller.scrollHeight
+  await expect(await canvas.findByRole('button', { name: /기록 100 / })).toBeVisible()
   await expect(history.mock.calls[2][1]).toMatchObject({ offset: 100, revisions: [commits[0].sha] })
 } }

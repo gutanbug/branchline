@@ -16,7 +16,7 @@ export const SelectAndApply: Story = { play: async ({ canvasElement }) => {
   await expect(detail.getByText('a8f31c2')).toBeVisible()
   await userEvent.click(canvas.getByLabelText('선택한 커밋의 예제 변경 포함'))
   await userEvent.click(canvas.getByRole('button', { name: '변경 사항 적용' }))
-  await expect(canvas.getByRole('status')).toHaveTextContent('실제 파일은 변경되지 않았습니다')
+  await expect(within(canvasElement.ownerDocument.body).getByRole('status')).toHaveTextContent('실제 파일은 변경되지 않았습니다')
   await expect(canvas.getByRole('button', { name: '변경 사항 적용' })).toBeDisabled()
 } }
 export const FilterWithoutCheckout: Story = { play: async ({ canvasElement }) => {
