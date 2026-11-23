@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ActionSummary, Button, Disclosure, Notice } from '../../design-system'
+import { ActionSummary, IconButton, Disclosure, Notice } from '../../design-system'
 import type { DesktopAPI, HostAccount, HostItem, HostResult, ReviewResource } from '../../app/types'
 
 export function ReviewReadiness({ api, account, project, item }: { api: Pick<DesktopAPI, 'hostingRead'>; account: HostAccount; project: string; item: HostItem }) {
@@ -26,7 +26,7 @@ export function ReviewReadiness({ api, account, project, item }: { api: Pick<Des
   for (const review of [...(approvals?.items || [])].sort((a, b) => a.date.localeCompare(b.date) || Number(a.id) - Number(b.id))) latest.set(review.title, review)
   const approved = [...latest.values()].filter(review => review.sha === item.sha && review.state === 'APPROVED').length
   const errors = results?.flatMap(result => result.status === 'rejected' ? [String(result.reason?.message || result.reason)] : []) || []
-  return <section aria-label="현재 커밋 검토 요약"><div className="bl-row-between"><h3>현재 커밋 검토 요약</h3><Button disabled={!results} onClick={() => setRevision(value => value + 1)}>검토 요약 새로고침</Button></div>
+  return <section aria-label="현재 커밋 검토 요약"><div className="bl-row-between"><h3>현재 커밋 검토 요약</h3><IconButton icon="refresh" label="검토 요약 새로고침" loading={!results} onClick={() => setRevision(value => value + 1)} /></div>
     {!results ? <Notice>현재 Head의 승인·검사를 조회하고 있습니다…</Notice> : <><ActionSummary title={`Head ${item.sha?.slice(0, 12) || '미제공'}`} status={failed || rules ? '조치 필요' : errors.length ? '일부 조회 실패' : '검토 필요'} facts={[
       { label: '현재 Head 검사', value: `${passed} 성공 · ${failed} 실패/취소 · ${pending} 대기/기타` },
       { label: account.provider === 'github' ? '조회된 현재 Head 승인자' : '승인 규칙', value: !approvals ? '조회 실패' : account.provider === 'github' ? `${approved}명 · 조회 범위 내 마지막 리뷰 기준` : `${rules}개 미충족 · ${approvals.items.filter(rule => rule.state === 'unknown').length}개 확인 필요` },

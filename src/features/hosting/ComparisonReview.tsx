@@ -1,46 +1,82 @@
 import { useEffect, useState } from 'react'
 import { Button, EmptyState, Notice, SelectField, TextField } from '../../design-system'
-import { remoteProject } from './remoteProject'
+import type { DesktopAPI, HostAccount, HostAccounts, SyncSnapshot } from '../../app/types'
+import type { ReviewPush } from '../workspace/RemoteWorkspace'
+import { AccountConnections } from './AccountConnections'
 import { HostActions } from './HostActions'
-import type { DesktopAPI, HostAccount, SyncSnapshot } from '../../app/types'
+import { useHostRead } from './queries'
+import { remoteProject } from './remoteProject'
 
-export function ComparisonReview({ api, path, source, target, sourceSha, targetSha }: { api: DesktopAPI; path: string; source: string; target: string; sourceSha: string; targetSha: string }) {
-  const [accounts, setAccounts] = useState<HostAccount[]>([]), [remotes, setRemotes] = useState<SyncSnapshot['remotes']>([])
-  const [selected, setSelected] = useState(''), [project, setProject] = useState(''), [verified, setVerified] = useState('')
-  const [loading, setLoading] = useState(true), [busy, setBusy] = useState(false), [error, setError] = useState(''), [retry, setRetry] = useState(0)
+type BranchPair = { source: string; target: string; sourceSha: string; targetSha: string }
+type Remote = SyncSnapshot['remotes'][number]
+
+function ReviewProject({ api, account, project, creation, destination, needsPush, onPush, blocked }: {
+  api: DesktopAPI; account: HostAccount; project: string; creation: BranchPair; destination?: Remote; needsPush?: boolean; onPush?: ReviewPush; blocked?: boolean
+}) {
+  const result = useHostRead(api, { account: account.key, kind: 'project', project })
+  const [published, setPublished] = useState(''), [pushing, setPushing] = useState(false)
+  const verified = result.value?.items[0]?.id
+  if (result.busy) return <Notice compact>원격 프로젝트 확인 중…</Notice>
+  if (!verified) return <Notice tone="error">{result.error || '프로젝트를 확인하지 못했습니다.'}<Button onClick={result.refresh}>프로젝트 다시 확인</Button></Notice>
+  const publication = JSON.stringify([destination?.push, creation.source, creation.sourceSha])
+  async function push() {
+    if (!onPush || !destination || pushing || blocked) return
+    setPushing(true)
+    try { if (await onPush(destination.name, destination.push, creation.source, creation.sourceSha)) setPublished(publication) }
+    finally { setPushing(false) }
+  }
+  return <>{destination && onPush && <div className="bl-actions">{published === publication
+    ? <small role="status">{destination.name}/{creation.source}에 게시됨</small>
+    : needsPush && <Button disabled={blocked} loading={pushing} onClick={() => void push()}>{destination.name}/{creation.source}에 Push</Button>}</div>}
+    <HostActions key={JSON.stringify(creation)} api={api} account={account} project={verified} kind="create" creation={creation} disabled={pushing || blocked} onRefresh={result.refresh} />
+  </>
+}
+
+export function ComparisonReview({ api, path, repoToken, source, target, sourceSha, targetSha, onPush, blocked }: BranchPair & {
+  api: DesktopAPI; path: string; repoToken?: string; onPush?: ReviewPush; blocked?: boolean
+}) {
+  const [accounts, setAccounts] = useState<HostAccounts>(), [sync, setSync] = useState<SyncSnapshot>()
+  const [choice, setChoice] = useState<string | null>(null), [input, setInput] = useState<string | null>(null), [confirmed, setConfirmed] = useState('')
+  const [error, setError] = useState(''), [retry, setRetry] = useState(0)
   useEffect(() => {
     let live = true
-    Promise.all([api.hostingAccounts(), api.syncState(path)]).then(([result, state]) => { if (live) { setAccounts(result.accounts); setRemotes(state.remotes); setLoading(false); setError('') } }).catch(error => { if (live) { setError(error.message); setLoading(false) } })
+    Promise.all([api.hostingAccounts(), api.syncState(path)]).then(([accounts, state]) => {
+      if (live) { setAccounts(accounts); setSync(state); setError('') }
+    }).catch(reason => { if (live) setError(reason.message) })
     return () => { live = false }
-  }, [api, path, retry])
-  const account = accounts.find(account => account.key === selected)
-  function select(key: string) {
-    setSelected(key); setVerified(''); setError('')
-    const host = accounts.find(account => account.key === key)?.host
-    const matches = remotes.flatMap(remote => {
-      const target = remoteProject(remote.fetch, host); return target ? [target.project] : []
-    })
-    setProject(new Set(matches).size === 1 ? matches[0] : '')
-  }
+  }, [api, path, repoToken, retry])
+  function select(key: string) { setChoice(key); setInput(null); setConfirmed('') }
+  const remotes = sync?.remotes || []
+  const matches = accounts?.accounts.filter(account => remotes.some(remote => remoteProject(remote.fetch, account.host)))
+  const account = choice === null && matches?.length === 1 ? matches[0] : accounts?.accounts.find(account => account.key === choice)
+  const projects = new Set(remotes.map(remote => remoteProject(remote.fetch, account?.host)?.project).filter(Boolean))
+  const suggested = account && projects.size === 1 ? [...projects][0] || '' : ''
+  const project = input ?? suggested
+  const verifiedPath = input === null ? suggested : confirmed
   function branch(ref: string) {
     if (ref.startsWith('refs/heads/')) return ref.slice(11)
     const remote = remotes.filter(remote => ref.startsWith(`refs/remotes/${remote.name}/`)).sort((a, b) => b.name.length - a.name.length)[0]
     return remote ? ref.slice(`refs/remotes/${remote.name}/`.length) : ''
   }
   const from = branch(source), to = branch(target)
-  async function verify() {
-    if (!account || busy) return
-    setBusy(true); setError(''); setVerified('')
-    try { const result = await api.hostingRead({ account: account.key, kind: 'project', project: project.trim() }); if (!result.items[0]?.id) throw new Error('프로젝트를 확인하지 못했습니다.'); setVerified(result.items[0].id) } catch (error) { setError((error as Error).message) } finally { setBusy(false) }
-  }
+  const destinations = account && verifiedPath ? remotes.filter(remote => !remote.blocked && remoteProject(remote.push, account.host)?.project === verifiedPath) : []
+  const destination = destinations.length === 1 ? destinations[0] : undefined
+  const repo = sync?.repository
+  const canPush = repo && destination && !repo.operation && repo.head === sourceSha && source === `refs/heads/${repo.branch}`
+    && !repo.refs.some(ref => ref.ref === `refs/remotes/${destination.name}/${from}` && ref.sha === sourceSha && remoteProject(destination.fetch, account?.host)?.project === verifiedPath)
+  const connect = accounts && <AccountConnections api={api} accounts={accounts} connectLabel={account ? '쓰기 권한으로 다시 연결' : '계정 연결'} onChange={(next, key) => { setAccounts(next); if (key) select(key) }} />
   return <section aria-label="비교에서 PR/MR 생성">
-    {loading && <Notice>호스팅 계정과 원격 저장소를 확인하고 있습니다…</Notice>}
-    {error && <Notice tone="error">{error}<Button disabled={busy} onClick={() => { setLoading(true); setRetry(value => value + 1) }}>연결 다시 조회</Button></Notice>}
-    {!loading && !accounts.length ? <EmptyState title="호스팅 계정을 연결하세요">프로젝트 현황의 계정 관리에서 GitHub/GitLab을 연결한 뒤 다시 조회하세요.<Button onClick={() => { setLoading(true); setRetry(value => value + 1) }}>계정 다시 조회</Button></EmptyState> : <>
-      <Notice compact>선택한 두 브랜치를 같은 원격 프로젝트에 Push한 뒤 생성하세요. 원격 SHA가 비교한 SHA와 일치하는지 실행 전에 확인합니다.</Notice>
-      <div className="bl-host-form"><SelectField label="PR/MR 작성 계정" disabled={loading || busy} value={selected} onChange={select} options={[{ value: '', label: '호스팅 계정 선택' }, ...accounts.map(account => ({ value: account.key, label: `${account.host} / ${account.login}` }))]} /><TextField label="PR/MR 원격 프로젝트" placeholder="owner/repository 또는 group/project" disabled={loading || busy} value={project} onChange={event => { setProject(event.target.value); setVerified('') }} /><Button disabled={!account || !project.trim() || busy || account.reconnect} loading={busy} onClick={() => void verify()}>원격 프로젝트 확인</Button></div>
-      {account?.reconnect && <Notice>프로젝트 현황의 계정 관리에서 다시 연결하세요.</Notice>}
-      {!from || !to ? <Notice>이름이 있는 로컬 또는 원격 추적 브랜치를 양쪽에 선택하세요.</Notice> : verified && account && <HostActions key={`${account.key}/${verified}/${source}/${target}`} api={api} account={account} project={verified} kind="create" creation={{ source: from, target: to, sourceSha, targetSha }} onRefresh={() => { setVerified(''); void verify() }} />}
-    </>}
+    {error ? <Notice tone="error">{error}<Button onClick={() => setRetry(value => value + 1)}>연결 다시 조회</Button></Notice>
+      : !accounts || !sync ? <Notice>호스팅 계정과 원격 저장소를 확인하고 있습니다…</Notice>
+      : !accounts.accounts.length ? <><EmptyState title="호스팅 계정을 연결하세요">PR/MR을 올릴 계정을 연결하고 원격 쓰기를 허용하세요.</EmptyState>{connect}</> : <>
+        <div className="bl-host-form"><SelectField label="PR/MR 작성 계정" value={account?.key || ''} onChange={select} options={[{ value: '', label: '호스팅 계정 선택' }, ...accounts.accounts.map(account => ({ value: account.key, label: `${account.host} / ${account.login}` }))]} />
+          <TextField label="PR/MR 원격 프로젝트" placeholder="owner/repository 또는 group/project" disabled={!account} value={project} onChange={event => { setInput(event.target.value); setConfirmed('') }} />
+          {account && !verifiedPath && <Button disabled={!project.trim()} onClick={() => setConfirmed(project.trim())}>원격 프로젝트 확인</Button>}
+        </div>
+        {!account && !matches?.length && connect}
+        {account && (account.reconnect || !account.writeAccess) ? <><Notice compact>PR/MR을 만들려면 이 계정의 원격 쓰기 권한이 필요합니다.</Notice>{connect}</>
+          : !from || !to || from === to ? <Notice compact>서로 다른 출발 브랜치와 대상 브랜치를 선택하세요.</Notice>
+          : account && verifiedPath && <ReviewProject key={JSON.stringify([account.key, verifiedPath])} api={api} account={account} project={verifiedPath} creation={{ source: from, target: to, sourceSha, targetSha }} destination={destination} needsPush={!!canPush} onPush={onPush} blocked={blocked} />}
+      </>}
   </section>
 }
