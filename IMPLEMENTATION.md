@@ -4,6 +4,8 @@
 
 ## 현재 실행되는 기능
 
+커밋 그래프의 HEAD 버튼은 현재 체크아웃한 브랜치와 짧은 SHA를 표시한다. 누르면 해당 커밋을 선택하고 화면으로 가져온다. 현재 그래프에 HEAD가 없으면 HEAD 이력을 연다. 브랜치에서 분리된 HEAD도 같은 방식으로 찾을 수 있다. 사이드바는 열린 폴더의 브랜치만 렌더링하고 그래프의 브랜치 툴팁은 열릴 때 계산한다.
+
 | 영역 | 연결된 동작 | 남은 범위 |
 | --- | --- | --- |
 | Electron | 로컬 파일로 React 실행, 제한된 preload IPC, renderer sandbox·contextIsolation·CSP | 서명·공증·자동 업데이트·Windows 실제 설치 검증 |
@@ -12,16 +14,16 @@
 | 원격·Stash | 원격 목록·추가, Fetch, fast-forward Pull, 단일 브랜치 Push, upstream 설정·ahead/behind, 중앙 Git 툴바, stash 보관·diff·복원·Pop·삭제, 원격 취소 | 원격 수정·삭제·prune·tag·submodule 전용 관리, 자동 merge/rebase Pull, 세부 전송 진행률 |
 | 브랜치 | LOCAL·ORIGIN·추가 원격별 사이드바, 검색·이력 조회, 생성·로컬 브랜치 명시적 전환, 조회와 checkout 분리 | 이름 변경·삭제·tag 전용 관리 |
 | 커밋 이력 | 전체 ref 또는 지정 ref 조회, 메시지·작성자 리터럴 필터, 경로·기간 조건, 100개 단위 무한 스크롤, 연속 부모 그래프·HEAD/ref·미니맵 이동·컬럼 조절 | 통합 SHA 검색·복수 작성자·merge/revert 조건·저장 필터·대규모 가상 렌더링 |
-| 비교 | A/B 도달 가능한 커밋 집합, A만/B만/차이/공통/전체, 개수, 끝점 또는 공통 조상 기준 파일 통계, 검토한 SHA를 현재 브랜치에 Merge/Rebase | 비교 파일별 전체 diff·split view·고급 그래프 |
+| 비교 | A/B 도달 가능한 커밋 집합, A만/B만/차이/공통/전체, 개수, 끝점 또는 공통 조상 기준 변경 파일 목록, 선택한 파일의 통합/좌우 diff, 검토한 SHA로 Merge/Rebase·PR/MR 생성 | 대용량 단일 patch의 부분 열람 |
 | Worktree | 활성 저장소 사이드바 목록·키보드 탭 열기, 새 브랜치·기존 로컬 브랜치·detached+폴더 생성, 탭 열기, 잠금·해제, 깨끗한 linked worktree 삭제 | 이동·prune·작업 중 삭제 조율 확장 |
 | 충돌 해결 | Git Stage 1/2/3·작업 파일 비교, 직접 편집·전체 결과 검토, 버전 재검사 후 저장, 직전 저장 복원, 별도 해결 표시, merge/rebase/cherry-pick 계속·검토 후 중단, 세 Agent의 대화·수정안 검토·초안 가져오기 | 스트리밍·진행 중 추가 지시, 파일 삭제 선택·바이너리·특수 파일, 강제 복구 |
 | Agent 설정 | Claude Code·Codex·Gemini CLI 설치·버전 탐지, 실행 파일 선택, 개별 토글, 기본 Agent 저장, 선택한 공식 CLI 실행·중단 | 앱 내 인증 시작·계정 선택/변경 감지·실제 계정 추론 검증 |
 | Agent 한도 | Codex ChatGPT 계정의 공식 읽기 API, 제공된 기간별 사용/잔여 %·리셋·확인 시각 | 실제 계정별 인증 검증, Claude/Gemini 공식 quota 경로, 비용·컨텍스트 별도 표시 |
-| PM·개발자 협업 | 활성 저장소의 PR/MR 목록/상세, 서버 제목/내 역할/업데이트 경과 필터, 서식/원문 본문·대화, 버전별 변경 파일·댓글/논의·리뷰 기록/승인 규칙, SHA별 Checks/Status·MR Pipelines, 프로젝트 CI 실행/Jobs, 최대 5개 프로젝트 첫 페이지 모아보기·담당/검토 요청 요약, 현재 Head 검사·승인 요약(조회 범위 명시), PR/MR 생성·댓글·승인·병합, GitHub 변경 요청, CI 재실행·취소 | 필수 검사·승인 최종 집계, 신규 workflow_dispatch/Pipeline 실행·인라인 댓글·GitLab 변경 요청, 원격 프로젝트별 탭·선택 복원 |
+| PM·개발자 협업 | 활성 저장소의 PR/MR 목록/상세, 서버 제목/내 역할/업데이트 경과 필터, 서식/원문 본문·대화, 버전별 변경 파일·댓글/논의·리뷰 기록/승인 규칙, SHA별 Checks/Status·MR Pipelines, 프로젝트 CI 실행/Jobs, 최대 5개 프로젝트 첫 페이지 모아보기·담당/검토 요청 요약, 현재 Head 검사·승인 요약(조회 범위 명시), PR/MR 생성·댓글·승인·병합, GitHub 변경 요청, CI 재실행·취소, 저장소별 PR/MR 탐색 위치 복원 | 필수 검사·승인 최종 집계, 신규 workflow_dispatch/Pipeline 실행·인라인 댓글·GitLab 변경 요청 |
 | 호스팅 인증 | GitHub.com/GitLab.com Device Flow, 공개 Client ID 설정, 원격 쓰기 별도 선택, 승인 대기·취소·만료·slow_down, 다중 계정, 갱신 직렬화, OS 암호화 보관 또는 세션 한정 연결·해제 | 실제 등록 앱/계정 승인·OS Keychain 저장 검증, Enterprise/Self-Managed, 제공자 권한 철회 자동화 |
 | 외부 도구 | stdio MCP 읽기 도구 5개, 열린 저장소를 선택해 클라이언트 설정 JSON 생성·복사, 패키지 내 서버 | MCP 쓰기·IDE 플러그인·실제 외부 클라이언트별 연결 검증 |
 
-초안과 검색·비교 조건은 저장소 경로에 귀속한다. 탭 전환·재시작·닫았다 열기 시 커밋 초안을 복원한다. 마지막 50개 저장소의 보기 상태를 보관한다. 로컬 Git 상세 선택은 탭 전환 중 유지되며 앱 재시작 또는 다른 상위 화면 이동 시 초기화된다. 원격 협업 선택은 아래 별도 세션 계약을 따른다. 탭 닫기는 Git checkout이나 worktree 삭제를 실행하지 않는다.
+초안과 검색·비교 조건은 저장소 경로에 귀속한다. 탭 전환·재시작·닫았다 열기 시 커밋 초안을 복원한다. 마지막 50개 저장소의 보기 상태를 보관한다. 저장소를 닫았다 열거나 앱을 재시작해도 커밋 선택, 그래프 상단 커밋과 행 내부 위치, PR/MR 목록·상세의 선택과 스크롤을 복원한다. Detached HEAD에서는 그래프에 표시된 SHA로 이동하거나 그 커밋에서 브랜치를 만들 수 있다. 탭 닫기는 Git checkout이나 worktree 삭제를 실행하지 않는다.
 
 ## 실행과 검증
 
@@ -79,7 +81,7 @@ pnpm package:win           # Windows x64 NSIS 설치 EXE
 - 프로젝트 목록은 GitHub 접근 가능 저장소 또는 GitLab 멤버 프로젝트이며, 경로 입력으로 다른 접근 가능 프로젝트를 조회할 수 있다. 프로젝트/PR/MR/CI/Jobs를 30개씩 조회하며 현재 페이지 개수를 전체 개수로 표시하지 않는다. 페이지 헤더가 없고 30개가 꽉 찬 경우 다음 페이지를 제공하므로 마지막 빈 페이지가 나올 수 있다. API timeout은 30초·응답 한도는 4MiB다.
 - PR/MR와 CI는 각각 갱신·오류를 가진다. 권한/SSO·404·인증 만료·요청 한도를 구분하며 자동 재시도하지 않는다. GitHub `closed`는 병합 포함, GitLab `closed`는 병합 제외이고 `all`에서 병합 건을 포함한다. 본문은 HTML 실행 없는 텍스트로 최대 20,000자를 표시한다. [GitHub PR API](https://docs.github.com/en/rest/pulls/pulls), [GitLab MR API](https://docs.gitlab.com/api/merge_requests/)
 - CI 목록은 프로젝트 전체 실행이다. PR/MR의 필수 검사 결과나 최종 병합 가능 여부로 간주하지 않는다. 실행 상태/결론·SHA·ref·원인·GitHub 회차를 따로 표시하고 GitHub Jobs는 선택 회차, GitLab Jobs는 재시도 포함으로 조회한다. 로그는 제공자 화면에서 연다. 앱 내 로그는 미구현이며 재실행·취소는 아래 원격 쓰기 절차를 따른다. PR/MR에서 직접 여는 버전별 검사와 승인 규칙은 아래 범위를 따른다. [Actions runs](https://docs.github.com/en/rest/actions/workflow-runs), [Actions Jobs](https://docs.github.com/en/rest/actions/workflow-jobs), [GitLab Pipelines](https://docs.gitlab.com/api/pipelines/), [GitLab Jobs](https://docs.gitlab.com/api/jobs/)
-- 계정 변경/연결 해제 시 이전 프로젝트와 늦은 응답을 지운다. 원격 프로젝트·리뷰·CI 선택과 필터는 같은 앱 세션의 상위 화면 이동 중 유지한다. 앱 재시작과 계정 변경/재승인 시 초기화한다. 화면을 떠나면 진행 중인 OAuth 승인 대기는 취소한다. 로컬 프로젝트 탭의 저장·초안 복원과 별개다.
+- 계정 변경/연결 해제 시 이전 프로젝트와 늦은 응답을 지운다. PR/MR 탐색 위치는 같은 저장소 경로·계정·원격 프로젝트에만 복원한다. CI 실행 선택은 세션 내에서만 유지한다. 화면을 떠나면 진행 중인 OAuth 승인 대기는 취소한다. 로컬 프로젝트 탭의 저장·초안 복원과 별개다.
 
 ## 버전에 귀속된 PR/MR 검토
 
@@ -130,14 +132,14 @@ BRANCHLINE_EXECUTABLE="$PWD/release/Branchline-darwin-arm64/Branchline.app/Conte
 - 원본 SHA·인덱스 stage/mode·HEAD·Git 작업 제어 파일 내용/식별 정보·작업 파일 바이트/모드를 검증한다. 작업별 공통 Git 디렉터리 쓰기 대기열을 재사용한다. 외부 변경을 발견하면 초안을 유지하고 다시 불러오기를 안내한다. 외부 프로그램과 최종 파일 교체/Git add 사이의 원자적 트랜잭션까지 보장하지는 않는다.
 - 작업 파일/각 원본은 1 MiB 이하 UTF-8 일반 파일만 허용한다. 심볼릭 링크·하드 링크·submodule·비정상 인코딩·바이너리·작업 파일 부재는 거부한다. 삭제 선택과 복잡한 경로 이동은 외부 도구를 사용한다. CRLF와 실행 권한을 보존하며 혼합 줄바꿈은 앱 저장을 막는다. 파일이 비어 있는 경우에도 명시적으로 검토 후 저장한다. 기본/사용자 지정 길이의 충돌 표시가 남아 있으면 해결 표시를 거부한다.
 - 직전 저장 원본은 앱 userData의 `conflict-backups/`에 파일별 1회분으로 남긴다(파일 0600, 디렉터리 0700; 암호화 저장 아님). 임시 파일을 동기화한 후 같은 디렉터리에서 교체한다. 동일 충돌·동일 적용 결과일 때 앱 내 복원이 가능하다. 외부 수정·해결 표시·새 Git 작업 이후 자동 복원을 막으며 남은 사본을 자동 삭제하지 않는다. 복원 관리/내보내기 UI는 후속 범위다.
-- 저장하지 않은 편집은 저장소 탭 및 로컬 보기 전환 동안 유지한다. 다른 충돌 파일을 불러올 때 폐기를 확인한다. 상위 화면 이동에도 유지하며 탭 닫기·정상 앱 종료 시 폐기 여부를 확인한다. 앱 재시작·강제 종료 후 초안 복구는 미지원이다.
+- 충돌 파일을 선택하면 원본 또는 그 파일의 편집 초안을 바로 연다. 초안과 Agent 대화는 파일별로 유지하며 저장·해결 표시는 선택한 파일에만 적용한다. 해결하면 남은 충돌 파일로 이동한다. 저장소 탭·화면 전환에서도 초안을 유지하고, 탭 닫기·정상 앱 종료 시 다른 파일에 남긴 편집까지 확인한다. 앱 재시작·강제 종료 후 초안 복구는 미지원이다.
 - Claude/Codex/Gemini의 실제 추론과 대화는 이번 단계에서 실행하지 않았다. 로컬 인증을 그대로 쓰는 제품별 허용 범위와 도구/MCP/hooks/파일 접근 격리가 확인되어야 연결한다. 공식 인증 정보와 계정 데이터는 복사하지 않는다. [Claude Code 제품 제공·인증 조건](https://code.claude.com/docs/en/legal-and-compliance), [Codex App Server](https://learn.chatgpt.com/docs/app-server)
 
 검증: `pnpm check`(Storybook 63개, Node 21개, native·Electron E2E·Storybook build), premium strict 검사, DESIGN lint를 통과했다. CR 단독 줄바꿈 보존 제한을 추가한 뒤 충돌 Node 5개를 다시 통과했고, 최신 소스가 포함된 서명 없는 macOS arm64 번들에서도 전체 Electron 검증을 통과했다. [실행 근거와 화면](./docs/conflict-resolution-2026-09-14/REPORT.md).
 
 ## 커밋 그래프·저장소 사이드바 · 2026-09-14
 
-저장소 새로 열기/재시작은 커밋 그래프로 시작한다. 기존 탭 이동 중 보기·커밋 초안은 유지한다. 실제 부모 SHA를 이용해 분기/병합을 그리며 필터나 페이지 밖의 부모는 점선으로 구분한다. 100개 페이지의 레인 좌표는 독립적이다. 실제 그래프가 있다는 이유로 전체 이력의 연속 레인·모든 고급 그래프 조작이 완료된 것은 아니다. Git log의 기존 topo-order 조회를 재사용한다. [Git log](https://git-scm.com/docs/git-log)
+처음 여는 저장소는 커밋 그래프로 시작한다. 다시 열 때는 내 작업 또는 프로젝트 현황으로 돌아간다. 기존 탭 이동 중 보기·커밋 초안은 유지한다. 실제 부모 SHA를 이용해 분기/병합을 그리며 필터나 페이지 밖의 부모는 점선으로 구분한다. 100개 페이지의 레인 좌표는 독립적이다. 실제 그래프가 있다는 이유로 전체 이력의 연속 레인·모든 고급 그래프 조작이 완료된 것은 아니다. Git log의 기존 topo-order 조회를 재사용한다. [Git log](https://git-scm.com/docs/git-log)
 
 활성 저장소 사이드바에 LOCAL·ORIGIN·추가 remote-tracking ref·WORKTREES를 표시한다. 브랜치 선택은 필터/페이지/상세를 초기화한 이력 조회이며 checkout은 별도 확인을 거친다. Worktree 선택은 연결된 실제 경로를 확인한 뒤 탭을 연다. 사이드바에서 조회 실패를 재시도할 수 있고 활성 저장소가 바뀐 뒤 늦게 도착한 응답을 표시하지 않는다. [Git worktree](https://git-scm.com/docs/git-worktree)
 
@@ -255,7 +257,7 @@ SVG를 25% 너비로 비균등 축소하던 규칙을 제거했다. 레인 간�
 ## 2026-09-14 — 공통 diff 검토 화면
 
 - 공통 CodeDiff에 파일 선택, 통합/좌우/원본 보기, 실제 이전·이후 줄 번호, 추가·삭제 강조, 변경 구간 탐색, 줄바꿈과 독립 스크롤을 연결했다. 커밋·Stash·작업 파일·PR/MR과 브랜치 비교에서 재사용한다.
-- 브랜치 비교는 기존 SHA·방향의 통계와 실제 patch를 함께 조회한다. 충돌 원본·AI 수정안·미추적 파일은 원문 모드로 분리한다. combined/불완전 patch는 원본으로 안내한다.
+- 브랜치 비교는 커밋 수와 변경 파일 목록을 먼저 조회하고, 파일을 선택하면 고정된 두 SHA에서 해당 파일의 patch만 읽는다. 1 MiB 또는 4,000줄을 넘으면 그 파일의 미리보기만 생략한다. 충돌 원본·AI 수정안·미추적 파일은 원문 모드로 분리한다. combined/불완전 patch는 원본으로 안내한다.
 - 작업 파일의 개별 상세 컨테이너를 InspectorPanel로 전환했다. 확대/축소에도 자식 뷰어를 유지해 파일 선택·보기 방식·스크롤이 초기화되지 않는다. 최소 창에서는 도구막대와 코드 스크롤을 분리한다.
 - 앱/기능의 개별 오류·로딩은 Notice, 비교·Stash 페이지 이동은 Pagination으로 교체하고 필요한 변형과 Storybook을 추가했다.
 - 구현 범위·검증·실제 Electron 화면: [diff 검토 결과](./docs/diff-viewer-2026-09-14/RESULTS.md). 전체 파일 조회나 문법 하이라이팅, 의미 기반 줄 대응은 이번 구현 범위에 포함되지 않는다.
@@ -394,3 +396,131 @@ PR/MR 본문·댓글/논의는 공통 MarkdownContent로 제목·강조·목록�
 `electron-builder@26.15.3`으로 실행 번들·macOS DMG·Windows NSIS EXE를 같은 staging 규칙으로 생성한다. `pnpm package:desktop`, `pnpm package:mac`, `pnpm package:win`과 `--arch arm64/x64`를 지원한다. 기존 앱 ID를 유지하며 인증서 서명과 게시를 명시적으로 끈 로컬 설치 빌드다. 기존 마크에서 설치 아이콘을 재사용했다.
 
 macOS arm64 DMG와 Windows x64 EXE 생성, frozen-lockfile 설치·lint·renderer 빌드, macOS 패키지 전체 Electron 회귀, DMG 무결성/마운트/내용 일치를 확인했다. Windows 실제 설치·실행과 배포 서명·공증은 남아 있다. [빌드 안내](BUILD.md), [검증 결과](docs/desktop-installers-2026-09-15/RESULTS.md).
+
+### 대규모 브랜치 첫 그래프 조회 수정 · 2026-09-15
+
+전체 브랜치 조회 기준 SHA를 Git 명령줄 인자로 펼치던 방식을 `git log --stdin`으로 변경했다. 브랜치 비교의 공통 조상/범위 조회에도 적용한다. 공통 Git 실행기는 표준 입력 쓰기 오류를 처리하며 기존 stderr/timeout/maxBuffer 동작을 유지한다. 다음 페이지의 4,096개 시작점 제한은 100,000개로 확장하고 최초 조회에도 같은 상한을 적용한다. SHA 형식 검증·조회 시작점 고정·100개 단위 누적 조회는 유지한다.
+
+실제 Git 임시 저장소에 원격 브랜치 30,000개를 만들어 기존 코드의 명령줄 길이 초과(`spawn E2BIG`, macOS)를 재현했다. 수정 후 첫 100개·다음 100개가 Git rev-list 결과와 일치하고, 브랜치 이동 후 같은 조회 기준 유지·오래된 커밋 제목 검색·literal 파일 경로 필터를 확인했다. Windows의 `spawn ENAMETOOLONG`을 발생시키는 긴 인자 전달도 제거했지만 Windows 실기기 재현은 하지 않았다. 공개된 v0.1.0 설치 파일은 이번 소스 수정으로 자동 갱신되지 않는다.
+
+검증 완료: Git/호스팅 테스트 53개, 대규모 ref/EPIPE 회귀, ESLint·diff 검사, 전체 Electron 회귀 통과. [검증 기록](docs/large-history-refs-2026-09-15/RESULTS.md).
+
+
+## 셸·프로젝트 현황 아이콘 작업 · 2026-09-15
+
+- 앱 설정은 헤더 오른쪽의 공통 IconButton, 저장소 열기·새 저장소·복제는 탭 옆 +의 ContextMenu menuOnly 변형으로 이동했다. 시작 화면의 설명형 열기 버튼은 유지한다.
+- PR/MR·CI·작업·검토 자료·계정 새로고침, 제공자 열기, 목록 복귀, 검색 지우기, 필터 초기화와 PR/MR 생성 진입은 한국어 접근성 이름을 가진 공통 아이콘으로 구성했다. 병합·승인·CI 제어의 텍스트와 실행 검토는 유지한다.
+- 메뉴 이동에 맞춰 기존 Electron 검증의 진입 경로를 갱신했다. 키보드 메뉴·복제 Dialog 복귀·좁은 창·탭 넘침 회귀 검증과 IconButton Storybook을 추가했다. 검증 근거는 [아이콘 작업 결과](./docs/icon-actions-2026-09-15/RESULTS.md)에 기록한다.
+
+
+## PR/MR 변경 파일 크게 보기 · 2026-09-15
+
+프로젝트 현황의 변경 파일에 InspectorPanel의 integratedToolbar를 적용했다. CodeDiff 툴바의 파일명 옆에서 확대하며 표시 방식·줄바꿈 상태를 유지한다. 기존 Dialog의 닫기/Esc 및 포커스 복귀를 재사용하고 바이너리·미제공 patch는 확대 버튼 없이 안내한다. 본문 잘림 안내는 확대 창에서도 유지한다. GitHub/GitLab 변경 파일, 확대 너비, 최소 창, 상태 유지·복귀 검증을 기존 Electron 테스트에 추가했다. 근거: [검증 결과](./docs/review-diff-expand-2026-09-15/RESULTS.md).
+
+## 체크아웃 없는 Pull·전체 흐름 검증 · 2026-09-17
+
+LOCAL 브랜치 메뉴의 Pull은 선택한 비활성 로컬 브랜치를 강제 옵션 없는 atomic fetch refspec으로 fast-forward 갱신한다. 현재 HEAD/index/작업 파일/미추적 파일/Stash/FETCH_HEAD를 유지하며 다른 Worktree에서 사용 중인 대상·비 fast-forward·오래된 상태를 거부한다. 현재 브랜치는 기존 자동 Stash Pull 흐름을 유지한다. 공통 ContextMenu와 Dialog에서 실제 대상과 방식을 구분한다.
+
+`pnpm check` 전체 통과(Storybook/UI 171개, Git/호스팅/보안 54개, native/Electron/복구 및 빌드). 최종 sync 검증 12개, strict 디자인 검사와 DESIGN.md lint 오류·경고 0. 최신 renderer 빌드로 앱을 정상 재시작하고 기존 저장소 탭·그래프 복원, 비활성 브랜치 Pull 확인 화면을 실제 앱에서 확인했다. 실제 사용자 저장소에서 Pull은 실행하지 않았다. 화면별 근거와 미수정 P2 항목은 [검증 보고서](./docs/pull-ux-review-2026-09-17/RESULTS.md)에 기록했다.
+
+## 반복 설명·확인 단계 간소화 · 2026-09-17
+
+공통 ContextMenu의 항목 하단 설명을 없애고 hover/접근성 설명으로 유지했다. TextField hint는 라벨 옆 Tooltip으로 옮겼다. 원격·Worktree·AI·MCP·프로필·리뷰 필터의 반복 사용법을 정리했다.
+
+Fetch/Pull/일반 Push/Upstream, 로컬 체크아웃·커밋·Git 계속, Stash 복원/Pop, 파일 Stash/ignore, 충돌 저장/해결은 사용 위치에서 바로 실행한다. PR/MR 작성·댓글·승인·변경 요청은 입력 폼에서 한 번 제출하며, 입력 없는 GitLab 승인은 바로 실행한다. AI 제안은 요청 이후 새 편집이 없으면 초안으로 바로 가져온다. 권한·최신 상태 검사와 중복 실행 차단은 유지한다. 삭제·폐기·덮어쓰기·이력 변경·병합 검토에는 기존 Dialog를 사용한다.
+
+완료 알림은 compact Notice로 표시하고 다른 화면·조회 범위로 이동하면 지운다. 현재 실행 정책은 UX-CONTRACT.md의 최신 절을 따른다. 검증 범위와 실행 결과는 [결과 문서](./docs/direct-actions-2026-09-17/RESULTS.md)에 기록한다.
+
+## 변경 보존 체크아웃 보완 · 2026-09-17
+
+로컬/원격 추적 체크아웃은 변경이 있으면 항상 자동 Stash → 체크아웃 → apply --index → 정상 복원 확인 → 해당 자동 Stash 삭제 순서로 처리한다. 최신 ref와 작업 상태를 사용하며 다른 mutation의 검토 token 검사는 유지한다. 복원 충돌·hook 실패·외부 변경·Stash 목록 변경 시 백업은 삭제하지 않는다.
+
+중첩 Git 저장소가 staged gitlink로 추가되면 Stash 후에도 폴더가 남아 체크아웃이 차단되는 문제를 보완했다. 해당 경로와 내부 상태를 확인하고 부모 변경의 Stash·복원 과정에서 독립 저장소 내부는 그대로 보존한다. 내부 변경은 부모 Stash에 포함되지 않는다. 새로 staged된 gitlink만 있는 경우도 표준 Stash 객체를 먼저 저장한 후 같은 apply --index 흐름으로 복원한다. 기존 서브모듈 내부 변경만 있는 경우는 자동 보관한 것으로 간주하지 않는다.
+
+검증: `pnpm check` 전체 통과(Storybook 175개, Git/호스팅/Agent 58개, native/Electron/초안 복구/Storybook 빌드). 임시 저장소의 post-checkout hook으로 전환 시점에 자동 Stash가 존재하고 일반 변경이 비워져 있음을 검증했다. staged/unstaged/미추적·바이너리·rename 복원, 기존 Stash 보존, gitlink 단독 변경, 중첩 저장소 외부 변경과 hook 실패 시 백업 유지를 확인했다. 최신 코드로 앱을 정상 종료·재실행하고 기존 저장소 두 탭과 그래프 복원을 실제 화면에서 확인했다. 사용자 저장소는 테스트 목적으로 체크아웃하지 않았다.
+
+## 중첩 저장소로 중단되는 자동 Stash Pull 수정 · 2026-09-18
+
+체크아웃 전용이었던 중첩 저장소 검증을 withAutoStash 내부로 옮겨 Pull에도 적용했다. 부모 index에 없는 미추적 중첩 저장소까지 확인하며, 해당 폴더만 남은 경우에는 새 Stash를 만들지 않는다. 부모의 일반 변경은 자동 보관·fast-forward·index 포함 복원·검증 후 생성본 삭제를 유지한다. Fetch 직후 내부 상태를 다시 검증하고 merge의 서브모듈 재귀 처리를 끈다. 기존 실패 Stash는 임의로 복원하거나 삭제하지 않는다.
+
+임시 원격/저장소로 오류를 먼저 재현한 뒤 미추적 중첩 저장소·staged gitlink·gitlink 단독 변경·중첩 폴더만 남은 재시도·원격 파일 충돌 보호를 확인했다. `pnpm lint`, `pnpm test:git` 59개, renderer 빌드 통과. 최신 코드로 앱을 정상 종료·재실행하고 저장소 탭과 그래프를 실제 화면에서 확인했다. 실제 사용자 저장소는 읽기 전용으로 상태와 기존 Stash 파일 목록만 확인했으며 테스트용 Pull·Stash 적용·삭제는 실행하지 않았다.
+
+### 2026-09-18 · Stash 우클릭 메뉴
+
+- 사이드바 Stash와 보관함에 공통 ContextMenu 기반 Apply / Pop / Delete 메뉴를 연결했다. 사이드바 ⋯·Shift+F10·Esc를 지원하며 상태가 같은 주기적 조회 중 메뉴를 유지한다.
+- 기존 RemoteWorkspace 실행과 ref+SHA 검증을 재사용한다. Apply는 원본 유지, Pop은 성공 시에만 제거, Delete는 기존 삭제 확인을 사용한다. 변경/진행 작업 중 복원을 차단하고 제거 성공 시 해당 상세 선택을 해제한다.
+- `pnpm check` 통과: UI 179개, Git·백엔드 59개, Electron 전체 E2E, 복구 검사, Storybook 빌드. 전용 임시 저장소에서 이전 Stash Apply/Pop, 삭제 취소/확정, 작업 파일 보존, 키보드/포커스, 760×580 메뉴 경계와 5초 갱신 유지, 접근성을 검증했다. Premium strict 정적 감사 오류 0개. 기존 번들 크기 경고는 유지된다.
+- 앱이 종료된 상태를 확인하고 `env -u ELECTRON_RUN_AS_NODE pnpm desktop`으로 최신 빌드를 실행했다. 실제 기존 프로젝트의 커밋 그래프 로딩을 확인했으며 실제 사용자 Stash를 적용하거나 삭제하지 않았다.
+
+### 2026-09-18 · Worktree 컨텍스트 메뉴
+
+- 사이드바와 관리 목록에 공통 ContextMenu 기반 현재 탭 열기, 새 탭 열기, Worktree 제거, 브랜치와 함께 제거, 잠금/해제를 추가했다. ⋯·우클릭·Shift+F10·Esc를 지원한다.
+- 탭 교체는 원래 경로에 귀속하며 이미 열린 대상은 중복 생성하지 않는다. 미저장 편집은 교체를 차단하고 커밋 메시지 초안은 보존한다. 열린 Worktree 제거는 탭을 먼저 닫도록 제한한다.
+- 기존 Git 큐에서 변경/진행 작업/무시된 파일, 기본/현재/잠긴 Worktree와 대상 HEAD/브랜치를 검증한다. 일반 제거는 브랜치를 유지하고, 함께 제거는 현재 HEAD에 병합된 로컬 브랜치만 강제 없이 삭제한다. 두 단계 중 후반 실패 시 브랜치 유지와 Worktree 제거를 구분해 보고한다.
+- `pnpm check` 통과: UI 185개, Git·백엔드 60개, Electron 전체 E2E/복구, Storybook. 최종 알림 정리 후 lint/build와 전용 Worktree Electron 검증도 통과했다. 760×580 메뉴 경계·접근성·키보드·실제 임시 저장소 삭제/보호·미저장 편집 및 커밋 초안 보존을 검증했다. Premium strict 감사 오류 0개. 기존 번들 크기 경고는 유지한다.
+- 실행 중 앱의 창을 정상 종료해 프로세스 종료를 확인한 뒤 `env -u ELECTRON_RUN_AS_NODE pnpm desktop`으로 최신 코드 재실행. 실제 nhis Worktree의 ⋯ 메뉴에서 다섯 항목을 확인하고 Esc로 닫았다. 실제 Worktree·브랜치·작업 파일은 변경하지 않았다.
+
+### 변경 보존 우선 체크아웃·Pull · 2026-09-18
+
+- 겹치지 않는 작업 변경은 기본 Git switch/fast-forward로 유지하며, 명시적인 덮어쓰기 거부와 동일 로컬 상태가 확인된 경우에만 기존 자동 Stash 흐름을 사용한다.
+- Pull은 Fetch·최신/분기 확인을 Stash 전에 수행해 연결 실패·취소·최신 상태에서 불필요한 보관을 만들지 않는다. 스테이징 복원·충돌 백업·중첩 저장소 보호는 유지한다.
+- 실제 Git 시나리오 및 전체 `pnpm check` 통과(UI 185, 백엔드 62, Electron E2E). 최신 코드로 앱 실행 및 실제 화면 확인 완료. 세부 범위: [검증 기록](docs/git-transition-ux-2026-09-18/RESULTS.md).
+
+### 2026-09-18 · 공통 작업 결과 토스트
+
+- 공통 `ToastProvider`/`ToastMessage`를 추가하고 Git·원격·파일·호스팅·프로필·MCP 작업 결과에 적용했다. 성공·안내·경고·오류·진행 상태를 아이콘/문구로 구분하며 그래프와 패널의 크기를 바꾸지 않는다.
+- 성공·안내 6초, hover/focus 일시 정지, F6 접근, Esc 닫기, 모달 포털, 중복 제거, 작업 종료·원본 상태 초기화 시 정리를 적용했다. 진행 알림의 취소 버튼과 필드 검증·지속 복구 안내는 유지한다.
+- `pnpm check` 통과(UI 193, 백엔드 62, Electron 전체·복구, Storybook). Premium strict 감사와 DESIGN.md lint 오류·경고 0개. [검증 기록](docs/toast-feedback-2026-09-18/RESULTS.md).
+- 최신 빌드로 데스크톱 앱을 실행하고 기존 프로젝트 탭과 커밋 그래프가 열리는 것을 확인했다.
+
+### 2026-11-18 · 실행 앱 UX 리뷰 반영
+
+- 스크롤바를 모든 화면에서 숨기고(휠·트랙패드·키보드 스크롤 유지), 그래프 가로 스크롤 줄을 제거했다. 왼쪽 메뉴는 공통 `ResizeHandle`로 200px~창 너비 29%(최대 480px) 범위에서 드래그·키보드로 조절하며 너비를 저장한다.
+- 브랜치 비교 기본값이 같은 브랜치끼리 열리지 않게 했다(main은 upstream과 짝). 변경 사항 화면은 파일 목록만 자체 스크롤하고 커밋 입력을 항상 표시하며, 파일 행을 한 줄로 압축했다. 높이 640px 이하 창은 헤더·푸터를 줄인다.
+- 브랜치 이름을 입력 중에 검증하고, Pull 분기 시 브랜치 비교 바로가기를 제공한다. Merge·Rebase·Cherry-pick 충돌은 Git 원문 실패 대신 확인 필요 안내로 표시한다. Stash 메시지는 선택(Git 기본 WIP 메시지)이다.
+- 새 대화상자가 열리면 이전 결과 토스트를 정리해 가림·포커스 순서 혼입을 막았다. 필터 패널 Esc 닫기, 사이드바 경로 끝부분 표시, 탭 1개일 때 이동 버튼 숨김, 프로필 신규 작성 중 삭제 버튼 숨김, 초안이 있는 탭을 닫을 때 복원 안내를 추가했다.
+- lint, build, `test:git`, Electron E2E 전체 스크립트, Storybook build 통과. `pnpm test`/`test:native`는 이 환경에 Playwright Chromium이 없어 실행하지 못했다.
+
+### 2026-11-18 · 2차 UX 리뷰 반영 (정렬·토글)
+
+- 체크아웃 시 자동 Stash 재적용이 겹친 파일 때문에 실패하면 대상 브랜치의 부분 적용을 정리하고 원래 브랜치·작업 변경(스테이징/작업/미추적)으로 되돌린 뒤 Stash를 제거한다. 되돌리기 자체가 실패하면 기존처럼 Stash를 보존하고 안내한다.
+- 사이드바·그래프의 긴 브랜치 이름은 말줄임 처리하고 전체 이름은 툴팁/title로 제공한다. 가로 스크롤 없이 행 메뉴(⋯)가 보인다.
+- `Disclosure`에 `variant`(`section` 기본, `tree`)를 추가했다. 섹션형은 전체 폭 행 + "펼치기/접기" 표시로 바뀌고, 브랜치·파일 트리는 기존 compact 형태를 유지한다.
+- AI Agents의 사용 스위치를 상태 배지(사용 중/사용 안 함) + 명시적 버튼(사용하기/사용 중지)으로 교체했다.
+- 비교 화면 개수 배지 줄바꿈, 앱 설정의 선택 상자 옆 버튼 정렬과 섹션 간격을 맞췄다.
+- 후속 반영: 그래프 태그 배지(주석 태그는 대상 커밋 기준), Branchline 전용 한국어 앱 메뉴(배포본에서 개발자 도구 제외), 키보드 단축키 창(⌘/Ctrl+/, ?, 도움말 메뉴, 공통 `ShortcutList`), 커밋 메시지에서 ⌘/Ctrl+Enter 커밋, 작업별 완료 토스트, 원격이 없을 때 "원격 추가 후 게시" 버튼, 이름 변경 창의 시작 커밋 제거, Pull 툴팁 문구, 바이너리 diff 안내, 빈 저장소의 "첫 커밋 만들기" 안내, 최근 프로젝트 경로 축약, 짧은 이력의 비교 그래프 위쪽 여백 제거.
+- Stash 내부(index/untracked) 커밋 숨김은 3차 리뷰에서 페이지 계산과 함께 반영했다.
+
+### 2026-11-18 · 3차 UX 리뷰 반영
+
+- 그래프: Stash 내부(index/untracked) 커밋을 숨긴다. `history()`의 offset·focus·anchor는 보이는 행 기준이며, 숨김 커밋이 있으면 rev-list ID 스캔으로 Git `--skip` 위치를 계산한다(focus는 위치 탐색과 같은 패스에서 계산). Stash 행의 내부 부모도 응답에서 뺀다.
+- 그래프: 여러 브랜치가 겹친 행의 배지를 `+N 브랜치`로 표기하고, 태그 배지가 툴팁 안에만 렌더링되던 문제를 고쳤다.
+- 왼쪽 메뉴: 검색 라벨을 placeholder로 바꾸고, 높이 720px 이하에서 저장소 경로·Fetch 상태를 숨겨 브랜치 목록 공간을 확보한다. Worktree 경로는 줄여 표시한다.
+- 충돌 해결: AI 대화는 선택한 Agent가 준비된 경우에만 펼친 채 시작한다. 파일 목록 검색·목록/트리 전환은 파일 2개 이상일 때만 표시한다. Git 작업 이름을 `Merge`/`Rebase`/`Cherry-pick`으로 통일한다(`features/workspace/operation.ts`).
+- 내 변경 사항: 1열 레이아웃(폭 1050px 이하)에서 파일을 선택하면 비교 영역으로 스크롤한다.
+- Stash 보관함·Worktree: 반복되던 카드 제목을 설명 문구로 바꾸고 `Linked worktree`를 `추가 worktree`로 표기한다.
+- 프로젝트 현황: 로컬 폴더 원격은 오류 대신 "호스팅 서비스가 아닌 원격입니다"로 안내한다.
+
+### 2026-11-18 · Magic UI 참고 UI 정리
+
+- Magic UI MCP(로컬 설정)에서 Dot Pattern·Bento Grid·Progressive Blur를 참고해 `DotPattern`, `ActionCard`/`ActionCardGrid`, `ScrollArea`를 디자인 시스템에 추가했다(Storybook 포함, 새 의존성 없음).
+- 첫 화면: 점 배경 hero, 저장소 열기·복제·새로 만들기 카드, 카드형 최근 프로젝트 목록.
+- `EmptyState`에 `decorated`·`action`을 추가하고 빈 그래프·Stash·호스팅·비교·충돌·외부 도구 연결 화면에 적용했다. 빈 Stash 보관함의 페이지 이동은 숨긴다.
+- 왼쪽 메뉴 스크롤 영역에 가장자리 흐림을 적용했다.
+
+### 2026-11-18 · 화면별 UI 정리 (Magic UI 참고 2차)
+
+- 공통 `PageHeader`·`SettingsCard` 추가(Storybook 포함). 앱 설정·AI Agents·외부 도구 연결은 같은 머리말·카드·폭(960px)을 사용한다. 저장소 경로는 줄여 표시한다.
+- 프로젝트 현황: 공통 머리말, 계정 관리 영역 안의 중복 "호스팅 계정" 제목 제거(`AccountConnections embedded`).
+- 커밋 상세: 크게 보기·닫기·SHA 복사를 아이콘 버튼으로, 제목/본문 라벨을 한국어로, HEAD가 아닌 커밋의 Amend는 숨긴다.
+- 내 변경 사항: 파일 검색 라벨을 placeholder로, 커밋·Amend 버튼을 한 줄로 배치해 파일 목록 높이를 확보하고 목록 영역에 가장자리 흐림을 적용했다. 구간 스테이징 버튼 글꼴을 본문 글꼴로 맞췄다.
+- 브랜치 비교: 툴바·현재 브랜치·선택 영역 사이 간격을 맞췄다.
+
+### 2026-11-18 · 4차 개선 (원격 흐름·탭·문구)
+
+- Push 거절(이력 분기): "확인 필요" 알림과 "원격 변경 Merge…"·"원격 위로 Rebase…" 버튼. 기존 Merge/Rebase 검토 대화상자로 연결한다.
+- Fetch 결과 요약: 받을 커밋 수, 최신 여부, 분기 경고. fast-forward 가능하면 알림에서 바로 Pull.
+- 저장소 탭 단축키 ⌘/Ctrl+1…9(9는 마지막), Ctrl+Tab/Ctrl+Shift+Tab. 단축키 도움말에 추가. 앱 메뉴 항목은 아직 없다.
+- 탭 이동 버튼은 첫 탭에서 숨기고 마우스·포커스 시에만 표시, 비활성 탭에도 테두리.
+- 필터 날짜 라벨을 "시작일"/"종료일"로 줄이고 기준은 도움말로 이동. 복제·Amend 대화상자 버튼을 "취소"로 통일. 알림 폭·여백 축소.
+- 원격 브랜치에서 새 Worktree를 만들면 같은 이름을 기본값으로 채우고, 시작 커밋이 그대로일 때 해당 원격 브랜치를 Upstream으로 설정한다(원격 tip이 바뀌면 거부). 툴바의 `–`는 이유(추적 브랜치 없음·원격 없음·분리된 HEAD·Fetch/Push 주소 다름)를 툴팁과 접근성 설명으로 보여준다.

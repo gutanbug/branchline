@@ -195,9 +195,9 @@ PR/MR은 명시적으로 확인한 같은 원격 프로젝트의 출발/대상 �
 
 ## 체크아웃의 자동 Stash · 2026-09-14
 
-사용자 요청에 따라 로컬·원격 추적 체크아웃은 변경 사항이 있으면 `stash push --include-untracked --no-keep-index` → 체크아웃 → `stash apply --index` → 성공/충돌 상태 확인 → 자동 Stash 삭제 순서로 처리한다. 스테이징과 미추적 파일을 포함하며 기존 Stash는 건드리지 않는다. 무시된 파일을 강제로 덮어쓰지 않는다. Merge/Rebase의 깨끗한 작업 디렉터리 조건은 별도다. Pull의 자동 Stash 계약은 아래 2026-09-15 절을 따른다.
+로컬·원격 추적 체크아웃은 변경을 유지하는 기본 Git 전환을 먼저 시도하며, 덮어쓰기 거부로 전환되지 않은 경우에만 자동 Stash에 보관한다. `stash push --include-untracked --no-keep-index` → 체크아웃 → `stash apply --index` → 성공/충돌 상태 확인 → 자동 Stash 삭제 순서로 처리한다. 스테이징과 미추적 파일을 포함하며 기존 Stash는 건드리지 않는다. 무시된 파일을 강제로 덮어쓰지 않는다. Merge/Rebase의 깨끗한 작업 디렉터리 조건은 별도다. Pull의 자동 Stash 계약은 아래 2026-09-15 절을 따른다.
 
-진행 중 Git 작업·미해결 충돌·첫 커밋 전 자동 보관·다른 Worktree가 사용하는 대상은 차단한다. Stash 후 잔여 변경(예: 서브모듈)이 있으면 체크아웃하지 않는다. 체크아웃 실패 시 원래 브랜치가 그대로이고 작업 디렉터리가 깨끗한 경우에만 변경 복원을 시도하며, 복구용 Stash는 남긴다. 적용 실패·충돌·목록 변경·삭제 실패 때도 자동 Stash를 보존하고 실제 상태를 다시 읽는다. 충돌은 기존 수동/AI 화면에서 검토하며 해결 뒤 보존본은 사용자가 확인 후 삭제한다. 앱 종료 등 중단 시 저장된 Stash는 Git 목록에서 복구할 수 있다.
+진행 중 Git 작업·미해결 충돌·첫 커밋 전 자동 보관·다른 Worktree가 사용하는 대상은 차단한다. Stash 후 일반 파일의 잔여 변경이 있으면 체크아웃하지 않는다. 중첩 저장소·서브모듈은 실제 저장소 루트와 내부 HEAD·index·작업 상태가 유지됨을 확인한 경우에만 남은 폴더를 허용한다. 내부 변경을 부모 Stash에 저장했다고 간주하지 않으며 내부 저장소를 재귀적으로 변경하지 않는다. 체크아웃 실패 시 원래 브랜치가 그대로이고 작업 디렉터리가 깨끗하거나 검증한 중첩 저장소만 남아 있는 경우에만 변경 복원을 시도하며, 복구용 Stash는 남긴다. 적용 실패·충돌·목록 변경·삭제 실패 때도 자동 Stash를 보존하고 실제 상태를 다시 읽는다. 충돌은 기존 수동/AI 화면에서 검토하며 해결 뒤 보존본은 사용자가 확인 후 삭제한다. 앱 종료 등 중단 시 저장된 Stash는 Git 목록에서 복구할 수 있다.
 
 모든 단계는 공통 Git 디렉터리의 앱 쓰기 큐 안에서 실행한다. 생성 메시지의 고유 ID로 보관 SHA를 식별하고 적용은 SHA로 수행한다. 삭제 직전에도 최신 Stash SHA를 대조한다. 외부 Git 프로세스는 앱 큐에 참여하지 않으므로 앱과 터미널의 동시 쓰기를 트랜잭션으로 보장하지는 않는다. [Git stash 공식 동작](https://git-scm.com/docs/git-stash)을 따른다.
 
@@ -209,6 +209,30 @@ PR/MR은 명시적으로 확인한 같은 원격 프로젝트의 출발/대상 �
 
 ## 자동 Stash Pull · 2026-09-15
 
-일반 변경이 있는 로컬 브랜치의 Pull도 체크아웃과 같은 공통 `withAutoStash`를 사용한다. 공통 저장소 쓰기 큐에서 reviewed token 확인 → 미추적 파일 포함 Stash → 원격 Fetch → 로컬 상태 재검증 → fast-forward → `stash apply --index` → 브랜치·HEAD·충돌/성공 확인 → 해당 자동 Stash 삭제 순서다. 기존 Stash는 변경하지 않는다. ignored 파일을 덮어쓰지 않으며 서브모듈 내부 변경을 자동 보관했다고 간주하지 않는다.
+일반 변경이 있는 로컬 브랜치의 Pull도 체크아웃과 같은 공통 `withAutoStash`를 사용한다. 공통 저장소 쓰기 큐에서 reviewed token 확인 → 원격 Fetch → 로컬 상태 재검증 → 최신/분기 확인 → fast-forward 직접 시도 → 덮어쓰기 거부 시에만 미추적 파일 포함 Stash 및 재시도 → `stash apply --index` → 브랜치·HEAD·충돌/성공 확인 → 해당 자동 Stash 삭제 순서다. 기존 Stash는 변경하지 않는다. ignored 파일을 덮어쓰지 않으며 서브모듈 내부 변경을 자동 보관했다고 간주하지 않는다.
 
-원격 실패·취소·분기 등으로 작업이 실패하고 원래 브랜치/HEAD/깨끗한 작업 상태가 유지되면 원래 작업 변경을 복원하고 안전 복사본 Stash는 남긴다. 외부 변경이 있으면 자동 복원을 중단하고 Stash를 보존한다. Pull 성공 후 복원이 충돌하면 받은 HEAD를 유지하고 Stash SHA와 복구 안내를 표시한다. unmerged 파일은 기존 충돌 해결 화면으로 연결한다. 스테이징 복원 실패를 숨기기 위해 `--index` 없는 재적용을 자동 시도하지 않는다. 작업/충돌 중 Pull은 차단한다.
+원격 실패·취소·분기는 Stash 전에 처리한다. Stash 이후 작업이 실패하고 원래 브랜치/HEAD/깨끗한 작업 상태가 유지되면 원래 작업 변경을 복원하고 안전 복사본 Stash는 남긴다. 외부 변경이 있으면 자동 복원을 중단하고 Stash를 보존한다. Pull 성공 후 복원이 충돌하면 받은 HEAD를 유지하고 Stash SHA와 복구 안내를 표시한다. unmerged 파일은 기존 충돌 해결 화면으로 연결한다. 스테이징 복원 실패를 숨기기 위해 `--index` 없는 재적용을 자동 시도하지 않는다. 작업/충돌 중 Pull은 차단한다.
+
+## 체크아웃 없는 로컬 브랜치 Pull · 2026-09-17
+
+로컬 브랜치 우클릭의 Pull은 선택한 브랜치의 upstream에서 해당 로컬 브랜치를 갱신한다. 현재 브랜치면 기존 자동 Stash 흐름을 유지한다. 다른 로컬 브랜치면 공통 저장소 큐에서 검토 token·대상 존재·Worktree 점유를 확인한 뒤 `git fetch --atomic --no-write-fetch-head`와 강제하지 않는 로컬 refspec으로 fast-forward 갱신한다. 현재 HEAD·index·작업 파일·Stash·FETCH_HEAD는 변경하지 않는다. 원격 추적 ref와 로컬 ref는 함께 성공하거나 함께 실패한다. 분기/원격 뒤로 이동·취소·연결 오류 시 재조회 후 안내하며 강제 갱신하지 않는다. 다른 Worktree에서 체크아웃한 브랜치는 그 Worktree를 열어 기존 Pull을 사용한다. 외부 Git은 앱 큐에 참여하지 않으며 Git 자체의 ref lock·fast-forward·체크아웃 보호도 유지한다. [Git fetch 공식 동작](https://git-scm.com/docs/git-fetch)
+
+## 변경을 보존하는 체크아웃 · 2026-09-17
+
+체크아웃은 공통 Git 큐 안에서 최신 상태와 선택한 ref를 다시 조회한다. 오래된 화면 token이나 변경된 브랜치 tip만으로 중단하지 않고 현재 ref의 tip으로 전환한다. 커밋·삭제·이력 재작성 등 다른 작업의 reviewed token 검증은 유지한다.
+
+직접 전환이 덮어쓰기를 거부하고 로컬 상태가 그대로이면 `stash push --include-untracked --no-keep-index` → `git switch --no-overwrite-ignore --no-recurse-submodules` → `stash apply --index` → 브랜치·HEAD·충돌 및 중첩 저장소 상태 확인 → 생성한 자동 Stash 삭제 순서로 처리한다. 먼저 일반 switch를 시도한다. hook·권한 오류나 변경된 상태에서는 자동 Stash 재시도를 하지 않는다. 기존 Stash는 그대로 유지한다.
+
+부모에 gitlink로 등록된 중첩 저장소는 Stash 후에도 디렉터리가 남을 수 있다. 해당 경로만 허용하고 내부 상태를 보관 전·체크아웃 후·복원 후 대조한다. Stash 작업에서도 `submodule.recurse=false`를 명시한다. 내부 파일은 별도 저장소의 변경이므로 부모 Stash에 포함되지 않고 제자리에 보존한다. 새로 staged된 gitlink만 있어 Git이 Stash를 생성하지 않는 경우에는 HEAD와 index를 부모로 하는 표준 Stash 객체를 `commit-tree`·`stash store`로 먼저 저장하고, 해당 index 항목만 비운 뒤 같은 체크아웃·apply --index 흐름을 사용한다. 기존 서브모듈 내부 변경은 부모 Stash로 보관할 수 없으므로 재귀 변경 없이 제자리에 유지한다. hook이나 외부 도구가 새 변경을 만들면 복원/삭제를 중단하고 자동 Stash를 남긴다. 강제 checkout, reset, clean은 사용하지 않는다. 근거: [Git stash 공식 문서](https://git-scm.com/docs/git-stash).
+
+## 중첩 저장소가 남아 있는 Pull · 2026-09-18
+
+자동 Stash의 중첩 저장소 탐지·검증을 공통 함수로 이동하여 로컬/원격 추적 체크아웃과 현재 브랜치 Pull에 동일하게 적용한다. Git이 보관하지 않는 미추적 중첩 저장소 폴더는 내부 HEAD·index·작업 상태를 대조해 보존한다. Fetch와 최신/분기 확인을 먼저 수행한다. 일반 변경은 직접 fast-forward를 시도하고, 덮어쓰기 거부 시에만 Stash → fast-forward → apply --index → 검증 후 해당 Stash 삭제를 따른다. 미추적 중첩 저장소 폴더만 남은 경우 새 Stash를 만들지 않는다. Fetch 직후 내부 상태도 재검증하고 merge에 submodule.recurse=false를 명시한다. 충돌하는 원격 파일·외부 변경 시 중단하며 백업을 유지한다. 이전 실패에서 남은 Stash는 이번 Pull에서 임의로 적용하거나 삭제하지 않는다.
+
+## Worktree 메뉴와 안전한 제거 · 2026-09-18
+
+기존 worktree mutation 큐에 `worktree-remove-branch`를 연결한다. 기본/현재/잠긴/경로 누락 Worktree, 변경·진행 중 작업·무시된 파일을 검사하고, 선택한 HEAD와 브랜치를 다시 확인한다. 함께 제거할 로컬 브랜치는 현재 HEAD의 조상이어야 한다. `git worktree remove` 성공 후 브랜치 SHA를 재검증하고 강제 없이 `git branch -d`로 제거한다. 두 명령은 하나의 원자적 Git 작업이 아니므로 후반 실패 시 Worktree는 제거됐지만 브랜치는 유지됐다고 알린다. 외부 Git은 앱 큐 밖에 있으며 Git 자체의 제거·브랜치 보호를 유지한다. 일반 제거는 브랜치를 유지한다. Linked Worktree는 현재 작업 위치에서도 잠금/해제가 가능하며 기본 Worktree는 제외한다. [Git worktree 공식 동작](https://git-scm.com/docs/git-worktree)
+
+## 불필요한 자동 Stash 방지 · 2026-09-18
+
+체크아웃과 현재 브랜치 Pull은 Git의 기본 변경 보존 동작을 먼저 사용한다. Git의 명시적인 tracked/untracked 덮어쓰기 거부이면서 로컬 token·중첩 저장소 상태가 그대로일 때만 기존 자동 Stash 흐름을 실행한다. hook 실패나 부분 실행을 일반적인 재시도 사유로 삼지 않는다. Pull은 Fetch를 먼저 완료하고 이미 최신·로컬 ahead·분기 상태를 판별하므로 연결 오류·취소·불필요한 병합 때문에 Stash를 생성하지 않는다. 다른 로컬 브랜치 Pull은 기존 ref 갱신 경로로 현재 작업을 그대로 보존한다. 실제 적용 충돌과 복구 실패의 백업은 유지하며 과거 Stash를 임의로 삭제하지 않는다.
